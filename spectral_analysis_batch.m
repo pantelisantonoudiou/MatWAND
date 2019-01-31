@@ -258,8 +258,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
         end
-
-            
         
         %not used currently%
         
@@ -1215,25 +1213,32 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                             delete(fullfile(obj.raw_psd_user,'*.mat'))
                             rmdir (obj.raw_psd_user)
                             rmdir (obj.raw_psd_path)
+                            rmdir (obj.save_path)
                             return
                         elseif strcmp(answer,'No')
-                           
                             continue
                         end
                                 
                     else
-                        if length(strsplit(user_input{2},';')) ~= length(com_time)
-                            % get user input for data analysis
-                            disp ('input structure is not correct')
-                            continue
-                        end
-                    end
-                    
-                    % get integer of save variable
-                    save_var = str2double(user_input{1});
-                    
-                    % start from last block and remove 1 on each loop
-                    curr_block = curr_block -1;
+                        % get integer of save variable
+                        save_var = str2double(user_input{1});
+                        
+                        if save_var == 0
+                            % start from last block and remove 1 on each loop
+                            curr_block = curr_block -1;
+                            continue      
+                            
+                        elseif save_var == 1                           
+                            if length(strsplit(user_input{2},';')) ~= length(com_time)
+                                % get user input for data analysis
+                                disp ('input structure is not correct')
+                                continue
+                            end 
+                            
+                            % start from last block and remove 1 on each loop
+                            curr_block = curr_block -1;
+                        end                      
+                    end                  
                 end
                 
                 % save files
@@ -1323,7 +1328,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % Get Fs
             Full_path = fullfile(obj.lfp_data_path, lfp_dir(1).name);
             load(Full_path,'samplerate')
-            obj.Fs = samplerate(1);
+            obj.Fs = samplerate(obj.channel_No);
             
             % get winsize
             obj.winsize = round(obj.Fs*obj.dur);
@@ -2035,6 +2040,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get exp list
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
             
+            % remove empty rows
+            exp_list(any(cellfun(@isempty, exp_list), 2),:) = []; 
+            
             % create figure
             figure(); hold on
                      
@@ -2048,7 +2056,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             for i = 1:exps
                 
                 for ii = 1:conds %concatenate conditions to one vector
-                    if isempty(exp_list{i,ii})==0
+%                     if isempty(exp_list{i,ii})==1
+%                         break
+%                     end
+                    
                         % load file
                         load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
                         
@@ -2065,22 +2076,22 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                             wave_temp = horzcat(wave_temp,psd_prm(strct1.par_var,:));
                         end
                         
-                        if ii == conds && strct1.norms_v == true %normalise
+                        if ii == conds && strct1.norms_v == true % normalise
                             wave_temp = wave_temp/wave_base;
                         end
                         
                         % empty psd_prm
                         psd_prm = [];              
-                    end
+                    
                 end
                 
                 % save values to matrix for analysis and plotting
-                if isempty(exp_list{i,ii}) == 0   
+%                 if isempty(exp_list{i,ii}) == 0   
                     feature_aver(:,i) = wave_temp;
-                else
-                    [len,~ ] = size(feature_aver);
-                    feature_aver(:,i) = NaN(len,1);
-                end
+%                 else
+%                     [len,~ ] = size(feature_aver);
+%                     feature_aver(:,i) = NaN(len,1);
+%                 end
                 
             end
             
@@ -2160,7 +2171,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
                                 
             % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);          
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);     
+            
+            % remove empty rows
+             exp_list(any(cellfun(@isempty, exp_list), 2),:) = []; 
             
             % create figure
             figure(); hold on
@@ -2175,7 +2189,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             for i = 1:exps
                 
                 for ii = 1:conds %concatenate conditions to one vector
-                    if isempty(exp_list{i,ii})==0
+%                     if isempty(exp_list{i,ii})==1
+%                         continue
+%                     end
                         % load file
                         load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
                         
@@ -2218,20 +2234,20 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         psd_prm1 = [];
                         psd_prm2 = [];
                         psd_prm = [];
-                    end
+                    
                 end
                 
                 % save values to matrix for analysis and plotting
-                if isempty(exp_list{i,ii}) == 0   
+%                 if isempty(exp_list{i,ii}) == 0   
                     feature_aver1(:,i) = wave_temp1;
                     feature_aver2(:,i) = wave_temp2;
                     feature_aver(:,i) = wave_temp;
-                else
-                    [len,~ ] = size(feature_aver);
-                    feature_aver1(:,i) = NaN(len,1);
-                    feature_aver2(:,i) = NaN(len,1);
-                    feature_aver(:,i) = NaN(len,1);
-                end
+%                 else
+%                     [len,~ ] = size(feature_aver);
+%                     feature_aver1(:,i) = NaN(len,1);
+%                     feature_aver2(:,i) = NaN(len,1);
+%                     feature_aver(:,i) = NaN(len,1);
+%                 end
                 
             end
             
@@ -2393,7 +2409,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 
                 % format graph
                 axis1 = gca; obj.prettify_o(axis1)
-                title([obj.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'])
+                title([strrep(erase(exp_list{i,ii},'.mat'),'_',' ') ' ' obj.channel_struct{obj.channel_No} ...
+                    ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'])
                 
                 % set limits
                 xlim([t(1) - t(end)/20, t(end)+ t(end)/20])
