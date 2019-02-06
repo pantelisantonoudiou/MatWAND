@@ -424,7 +424,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             %input parameters are PSD and frequency vectors
             
             %smooth psd curve (smooth factor of 5)
-            smth_psd = smooth(psd_raw);
+            smth_psd = smooth_v1(psd_raw);
             
             %find peak power and index at which the peak power occurs
             [Peak, x_index] = max(smth_psd);
@@ -3172,7 +3172,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 h(1) =  plot(t,mean_wave,'o','Color',col_edge,'MarkerEdgeColor',col_edge,'MarkerFaceColor',col_face,...
                     'MarkerSize',5,'DisplayName',strrep(psd_object.save_path(k(end-1)+1:k(end)-1),'_',' '));
                 
-                hold on;plot(t,smooth(mean_wave,15),'Color',col_edge,'LineWidth',4)
+                hold on;plot(t,smooth_v1(mean_wave,15),'Color',col_edge,'LineWidth',4)
                 
                 
                 % set x label
