@@ -2,6 +2,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     % x = spectral_analysis_batch
     %
     % x = reload_object(x)
+    % folder_list = x.obtain_dir_list(x.desktop_path)
     %
     % extract_pmatrix_mat_user(x,5,80), extract_pmatrix_mat(x), extract_pmatrix_bin(x)
     %
@@ -12,12 +13,20 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     %
     % psd_prm_time(x,a), aver_psd_prm(x,a)
     % 1- peak power, 2 - peak freq, 3. power area
-%     a.Flow = 2  
-%     a.Fhigh = 15
-%     a.par_var = 2 
-%     a.norms_v = false 
-%     a.ind_v = false 
-%     a.mean_v = true 
+    %     a.Flow = 2
+    %     a.Fhigh = 15
+    %     a.par_var = 2
+    %     a.norms_v = false
+    %     a.ind_v = false
+    %     a.mean_v = true
+    %
+%     a.band1 = 5
+%     a.band2 = 10
+%     a.band_width = 4
+%     a.par_var = 1
+%     a.norms_v = true
+%     a.ind_v = true
+%     a.mean_v = true
     
     properties
         % wave properties
@@ -788,8 +797,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         % get color for vectors
         function [col_face,col_edge] = color_vec2(col_idx)
              % create colour vectors
-            col_mat = [0 0 1; 1 0 0; 0 0 0;0.8 0.2 0.9 ; 1 0.6 0.2];
-            col_sem_mat = [0.5 0.5 1; 1 0.5 0.5; 0.5 0.5 0.5; 0.8 0.5 0.9; 1 0.8 0.6]; 
+            col_mat = [0 0 0;0 0 1; 1 0 0 ;0.8 0.2 0.9 ; 1 0.6 0.2];
+            col_sem_mat = [0.5 0.5 0.5; 0.5 0.5 1; 1 0.5 0.5; 0.8 0.5 0.9; 1 0.8 0.6]; 
             %= col_mat; col_sem_mat(col_sem_mat==0)=0.9;
             
             % never allow color index to exceed length of color vector
@@ -804,7 +813,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % dot plot
-        function dot_plot(inarray,conditions,indiv_var,mean_var)
+        function dot_plot(inarray,conditions,indiv_var,mean_var,col_vec)
             % dot_plot(extr_feature,conditions,indiv_var,mean_var)
             % Inarray = m (conditions) by n (experiment number array 
             % conditons = cell with condition labels
@@ -817,15 +826,18 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % calculate sem
             sem_pkpower = std(inarray,0,2)/sqrt(exps);
             
+            hold on;
+            
             % plot individual experiments
             if indiv_var ==1
-                plot(inarray,'o-','color',[0.5 0.5 0.5],'MarkerFaceColor', [0.5 0.5 0.5],'MarkerSize',4);
+                plot(inarray,'o-','color',col_vec(1,:),'MarkerFaceColor', col_vec(1,:),'MarkerSize',4);
+                
             end
             
             % plot mean experiment
             if mean_var == 1
-                plot(mean(inarray,2),'k-', 'MarkerFaceColor', 'k','Linewidth',1.5)
-                errorbar(mean(inarray,2),sem_pkpower,'k','Linewidth',1.5)
+                plot(mean(inarray,2),'-','color',col_vec(2,:),'MarkerFaceColor', col_vec(2,:),'Linewidth',1.5)
+                errorbar(mean(inarray,2),sem_pkpower,'color',col_vec(2,:),'Linewidth',1.5)
             end
             
             ax1= gca;
@@ -2527,7 +2539,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % choose between dot or bar plot
             if plot_type == 1
-                obj.dot_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v)
+                obj.dot_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v...
+                    ,[0.5 0.5 0.5 ;0 0 0])
             end
             
             if plot_type == 2
@@ -2624,7 +2637,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % choose between dot or bar plot
             if plot_type == 1
-                obj.dot_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v)
+                obj.dot_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v...
+                    ,[0.5 0.5 0.5 ;0 0 0])
             end
             
             if plot_type == 2
@@ -2992,7 +3006,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % Aver PSD parameter
         function extr_feature = aver_psd_prm_matrix(obj,strct1)
-            % extr_feature = aver_psd_prm(obj,strct1,plot_type)
+            % extr_feature = aver_psd_prm_matrix(obj,strct1)
             % Plot aver psd parameters
             % strct1.Flow = 2  low boundary
             % strct1.High = 15 high boundary
@@ -3052,13 +3066,69 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
 
         end
         
-        % Plot between conditions
+        % Aver PSD parameter ratio
+        function extr_feature = aver_psd_prm_matrix_ratio(obj,strct1)
+            % extr_feature = aver_psd_prm_matrix_ratio(obj,strct1)
+            % Plot average PSD parameters
+            % strct1.band1 = 5  low boundary
+            % strct1.band2 = 10 high boundary
+            % strct1.band_width = 5 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            % strct1.norms_v = true % normalise 
+            % strct1.ind_v = true % plot individual experiments
+            % strct1.mean_v = true % plot mean
+            
+            % get matlab directory for processed psds
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+            
+            % get exp list
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
+            
+            % get freq parameters
+            f_range(1) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 - strct1.band_width) - obj.F1+1;
+            f_range(2) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 + strct1.band_width) - obj.F1+1;
+            f_range(3) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 - strct1.band_width) - obj.F1+1;
+            f_range(4) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 + strct1.band_width) - obj.F1+1;
+            
+            % get frequency vector
+            freq = eval(obj.freq_cmd); freq = freq(obj.F1:end);
+            
+            % get size for each condition
+            [exps, conds] = size(exp_list);
+            
+            % preallocate vector
+            extr_feature = zeros(conds,exps);
+            for i = 1 : exps %loop through experiments
+                
+                for ii = 1:conds %loop through conditions
+                    
+                    if isempty(exp_list{i,ii})==0 % check if file is present
+                        % load file
+                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                        
+                        % get parameters from each experiment
+                        [psd_prmA(1),psd_prmA(2),psd_prmA(3)] = obj.psd_parameters(mean(proc_matrix(f_range(1):f_range(2),:),2)...
+                            ,freq(f_range(1):f_range(2)));
+                        [psd_prmB(1),psd_prmB(2),psd_prmB(3)] = obj.psd_parameters(mean(proc_matrix(f_range(3):f_range(4),:)...
+                            ,2),freq(f_range(3):f_range(4)));
+                        
+                        extr_feature(ii,i) = psd_prmA(strct1.par_var)/psd_prmB(strct1.par_var);
+                    else
+                        extr_feature(ii,i) = NaN;
+                    end
+                end
+            end
+        
+    end
+        
+        % Plot between conditions (time)
         function cmp_psd_prm_time(obj,strct1,folder_list,ratio)
             if ratio == false
                 % get title string
-                ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
+                ttl_string = [num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
             else
-                ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.band1) ' / ' num2str(strct1.band2)  ' Hz'];
+                ttl_string = [num2str(strct1.band1) ' / ' num2str(strct1.band2) ...
+                    ' Width (' num2str(strct1.band_width) ') Hz'];
             end
             
             % choose label
@@ -3073,7 +3143,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             
              % create figure
-            figure('Name',ttl_string);
+            figure();
+            % add figure title
             obj.super_labels(ttl_string,[],y_label)
             obj.prettify_o(gca)
             
@@ -3123,86 +3194,93 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         strrep(psd_object.condition_id{iii+1},'_',' '),'FontSize',14,'FontWeight','bold')
                 end
                 % add legend
-                legend(h(1))
+%                 legend(h(1))
 
             end
+
         end
         
-         % Plot between conditions
-        function cmp_psd_prm_aver(obj,strct1,folder_list,ratio)
-%             if ratio == false
-%                 % get title string
-%                 ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
-%             else
-%                 ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.band1) ' / ' num2str(strct1.band2)  ' Hz'];
-%             end
-%             
-%             % choose label
-%             switch strct1.par_var
-%                 case 1
-%                     y_label = 'Peak Power (V^2 Hz^{-1})';
-%                 case 2
-%                     y_label = 'Peak Freq. (Hz)';
-%                 case 3
-%                     y_label = 'Power Area (V^2)';
-%             end
-%             
+        % Plot between conditions (average)
+        function [bar_vector,pval] = cmp_psd_prm_aver(obj,strct1,folder_list,ratio)
+
+             % choose label
+             switch strct1.par_var
+                 case 1
+                     y_label = 'Peak Power (V^2 Hz^{-1})';
+                 case 2
+                     y_label = 'Peak Freq. (Hz)';
+                 case 3
+                     y_label = 'Power Area (V^2)';
+             end
+             
+             %create _figure
+             figure()
+             for i  = 1: length(folder_list)
+                 
+                 % load psd object for each set of experiments
+                 load(fullfile(folder_list{i},'psd_object'));%#ok
+                 psd_object = copy(psd_object);
+                 
+                 % get aver parameters across conditions
+                 if ratio == false
+                     extr_feature = aver_psd_prm_matrix(psd_object,strct1);
+                     ttl_string = [psd_object.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
+                 else
+                     extr_feature = aver_psd_prm_matrix_ratio(psd_object,strct1);
+                     ttl_string = [psd_object.channel_struct{psd_object.channel_No} ' ' num2str(strct1.band1) ' / ' num2str(strct1.band2)  ' Hz'];
+                 end
+                 % get color
+                 [col_face,col_edge] = spectral_analysis_batch.color_vec2(i);
+                 
+                 subplot(1,length(folder_list),i)
+                 % choose between dot or bar plot
+                 obj.dot_plot(extr_feature(2:3,:),psd_object.condition_id(2:3),strct1.ind_v,strct1.mean_v...
+                     ,[col_face;col_edge])
+                 
+                 % format graph
+                 obj.prettify_o(gca)
+                 
+                 bar_vector{i} = extr_feature(3,:) - extr_feature(2,:);
+                 [~, pval(i)] = ttest(extr_feature(3,:),extr_feature(2,:));
+                 bar_face_col(i,:) = col_face;
+                 bar_edge_col(i,:) = col_edge;
+                 bar_labels{i} = psd_object.condition_id{3};
+                 
+             end
             
-%              % create figure
-%             figure('Name',ttl_string);
-%             obj.super_labels(ttl_string,[],y_label)
-%             obj.prettify_o(gca)
+             
+             figure();hold on
+             % get mean and SEM
+             mean_vec = cellfun(@mean,bar_vector);
+             std_vec = cellfun(@std,bar_vector);
+             len_vec = cellfun(@length,bar_vector);
+             sem_vec = std_vec./sqrt(len_vec);
+             
+            % set tick number
+            x_ticks = 1:length(mean_vec);
             
-            for i  = 1: length(folder_list)
-                
-                % load psd object for each set of experiments
-                load(fullfile(folder_list{i},'psd_object'));%#ok
-                psd_object = copy(psd_object);
-                
-                % get aver parameters across conditions
-                extr_feature = aver_psd_prm_matrix(obj,strct1);
-                
-%                 if ratio == false
-                    
-%                 else
-%                     [feature_aver, conds] = prm_prm_ratio_matrix(psd_object,strct1);
-%                 end
 
-                [col_face,col_edge] = spectral_analysis_batch.color_vec2(i);
-                
-                subplot(length(folder_list),1,i)
-                mean_wave = mean(feature_aver,2);
-                
-                % get time
-                [units,~,t,x_condition_time] = getcond_realtime(psd_object,feature_aver);
-                
-                k = strfind(psd_object.save_path,'\');
-                
-                h(1) =  plot(t,mean_wave,'o','Color',col_edge,'MarkerEdgeColor',col_edge,'MarkerFaceColor',col_face,...
-                    'MarkerSize',5,'DisplayName',strrep(psd_object.save_path(k(end-1)+1:k(end)-1),'_',' '));
-                
-                hold on;plot(t,smooth(mean_wave,15),'Color',col_edge,'LineWidth',4)
-                
-                
-                % set x label
-                xlabel(['Time (' units ')'])
-                
-                % format graph
-                obj.prettify_o(gca)
-               
-                % set limits
-                xlim([t(1) - t(end)/20, t(end)+ t(end)/20])
-%                 ylim([min(feature_aver(:))- mean(feature_aver(:))/20, max(feature_aver(:))+ mean(feature_aver(:))/20 ])
-                
-
-                % add legend
-                legend(h(1))
-
-            end
-        end
-        
-        
-        
+             for i  = 1: length(folder_list)
+                 
+                 % add bars
+                 bar(i, mean_vec(:,i),'FaceColor',bar_face_col(i,:),'EdgeColor',bar_edge_col(i,:));
+                 % add significance
+                 mysigstar(gca, i, (mean_vec(:,i)+ sem_vec(:,i))*1.1, pval(i));
+                 
+             end
+             % add SEM error
+             errorbar(mean_vec,sem_vec,'.','color','k','Linewidth',1);
+             
+             xticks(x_ticks); xticklabels(strrep(bar_labels,'_',' '));
+             % set x boundaries
+             lim_boundary = length(mean_vec)*0.3; % xtickangle(45);
+             xlim([x_ticks(1)-lim_boundary x_ticks(end)+ lim_boundary]);
+             ylabel(['Delta ' y_label]);
+             obj.prettify_o(gca)
+         end
+         
+         
+         
     end
     
 end
