@@ -331,6 +331,119 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
+    methods(Static) % EMG related
+        
+        % remove signal outliers
+        function ArteFree_signal = remove_signal_outliers(Fs,signal,thresh_index)
+            %remove_outliers(x,signal,10)
+            Aver_time = 0.1*Fs; %in s
+            
+            rms_signal = rms(signal);
+            
+            threshold = thresh_index* rms_signal;
+            
+            ArteFree_signal = signal;
+            
+            for i = 1:Aver_time
+                if signal(i)>threshold
+                    ArteFree_signal(i)= median(signal(i:i+Aver_time));
+                elseif signal(i)<-threshold
+                    ArteFree_signal(i)= median(signal(i:i+Aver_time));
+                end
+            end
+            
+            
+            for i = Aver_time+1:length(signal)- Aver_time
+
+                if signal(i)>threshold
+                    ArteFree_signal(i)= median(signal(i-Aver_time:i+Aver_time));
+                elseif signal(i)<-threshold
+                    ArteFree_signal(i)= median(signal(i-Aver_time:i+Aver_time));
+                end
+            end
+            
+            for i = length(signal)- Aver_time +1 : length(signal)
+                if signal(i)>threshold
+                    ArteFree_signal(i)= median(signal(i-Aver_time:i));
+                elseif signal(i)<-threshold
+                    ArteFree_signal(i)= median(signal(i-Aver_time:i));
+                end
+            end
+            
+            
+%             % plot results
+%             plot(signal,'k','LineWidth',1.5); hold on; plot(ArteFree_signal,'b')
+%             plot(ones(1,length(signal))*threshold,'r-.')
+%             plot(-ones(1,length(signal))*threshold,'r-.')
+%             spectral_analysis_batch.prettify_o(gca)
+        end
+        
+        % bin signal using rms value
+        function emg_signal = emg_bin(input_wave,winsize)
+            % emg_signal = emg_bin(input_wave,winsize)
+            % outputs = emg_signal
+            % inputs = input_wave,winsize
+            
+            % Spectrogram settings:
+            overlap = round(winsize/2);
+            
+            % get correct channel length for analysis
+            Channel_length = length(input_wave)-(rem(length(input_wave),overlap));
+            % fprintf('%d samples were discarded to produce equal size windows\n',(rem(length(input_wave),winsize)))
+            
+            % preallocate waves
+            emg_signal = zeros(1,(Channel_length/overlap)-2);
+            
+            % removes dc component
+            input_wave = input_wave - mean(input_wave);
+            
+            % initialise counter
+            Cntr = 1;
+            for i=1:overlap:Channel_length -(overlap) %loop through signal segments with overlap
+                %%get segment
+                signal = input_wave(i:i+winsize-1);
+                
+                % save power spectral density over time
+                emg_signal(1,Cntr)= rms(signal);
+                
+                % increase counter
+                Cntr = Cntr+1;
+            end
+            
+        end
+            
+        % merge bins for smoothing and long files
+        function merged_wave = merge_bins_signal(bin_size,org_bin_size,input_wave)
+            % p_matrix_out = merge_bins(obj,power_matrix)
+            
+            % get elements to be averaged
+            merge_factor = bin_size/org_bin_size;
+            
+            %get size of current matrix
+            [W,L] = size(input_wave);
+            
+            % get reps required to cover the file
+            new_L = floor(L/merge_factor); 
+            
+            % preallocate matrix
+            merged_wave =  zeros(W,new_L);
+            
+            % new counter
+            cntr = 1; 
+            
+            for i = 1: merge_factor:L-merge_factor+1 %loop through psd bins
+                % get mean
+                merged_wave(cntr) = mean(input_wave(:,i:i+merge_factor-1),2);
+                
+                % update counter
+                cntr = cntr +1;
+ 
+            end
+            
+        end
+            
+    end
+        
     methods(Static) % PSD related %
                
         %%% Extracting and manipulating the PSD %%%
@@ -1150,6 +1263,54 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
        
         end 
         
+    end
+    
+    methods % EMG analysis %       
+        function Get_EMG(obj,lfp_obj_path) % continue
+            % create analysis folder
+            k = strfind(obj.lfp_data_path,'\');
+            obj.save_path = fullfile(obj.lfp_data_path(1:k(end-1)-1),['analysis_' obj.channel_struct{obj.channel_No}]);
+            obj.proc_psd_path = fullfile(obj.save_path,'EMG_rms');
+            mkdir(obj.save_path); mkdir(obj.proc_psd_path);
+
+             % get lfp directory
+            lfp_dir = dir(fullfile(obj.lfp_data_path,'*.mat'));
+            
+            % Get Fs
+            Full_path = fullfile(obj.lfp_data_path, lfp_dir(1).name);
+            load(Full_path,'samplerate')
+            obj.Fs = samplerate(obj.channel_No);
+            
+            % get winsize
+            s = load(fullfile(lfp_obj_path,'psd_object'));
+            obj.dur = s.psd_object.dur;
+            obj.winsize = round(obj.Fs*obj.dur);
+            
+            % initialise progress bar
+            progressbar('Progress')
+            
+            % loop through experiments and perform fft analysis
+            for i = 1:length(lfp_dir)
+                % load file
+                Full_path = fullfile(obj.lfp_data_path, lfp_dir(i).name);
+                load(Full_path,'data','datastart','dataend')
+                
+                % get data on desired channel and block 
+                data_temp = data(datastart(obj.channel_No,obj.block_number): dataend(obj.channel_No,obj.block_number));
+                
+                % obtain noise free rms signal
+                ArteFree_signal = obj.remove_signal_outliers(obj.Fs,data_temp,30);
+                emg_signal = obj.emg_bin(ArteFree_signal,obj.winsize);%#ok
+                save(fullfile(obj.save_path,lfp_dir(i).name),'emg_signal')
+                
+                % update progress bar
+                progressbar(i/length(lfp_dir))
+            end
+            
+            %save psd_object
+            psd_object = saveobj(obj);%#ok
+            save(fullfile(obj.save_path,'psd_object.mat'),'psd_object');
+        end
     end
     
     methods % A - fft analysis %
@@ -2852,12 +3013,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-    methods % E - Correlation
-        function corr_psd_prm(obj,Flow,Fhigh)
-        end
-    end
-    
-    methods % F - Comparative Plots and statistics
+    methods % E - Comparative Plots and statistics
         
         % get matrix with aver PSD parameters vs time
         function [feature_aver, conds] = psd_prm_matrix(obj,strct1)  
@@ -3278,9 +3434,112 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
              ylabel(['Delta ' y_label]);
              obj.prettify_o(gca)
          end
-         
-         
-         
+       
+    end
+    
+    methods % F - Correlation
+        % EMG correlation
+        function ret_str = corr_psd_prm_emg(obj,strct1,emg_path)
+            % ret_str = corr_psd_prm_emg(obj,strct1,emg_path)
+            % Plot PSD parameters vs time
+            % strct1.Flow = 2  low boundary
+            % strct1.Fhigh = 15 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            % strct1.norms_v = true % normalise
+            % strct1.ind_v = true % plot individual experiments
+            % strct1.mean_v = true % plot mean
+            
+            if length(obj.condition_id)~= 1
+                ret_str = 'Only one condition is allowed. Please re enter conditions';
+                return
+            else
+                ret_str = [];
+            end
+          
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+            emg_dir = dir(fullfile(emg_path,'*.mat'));
+            
+            % get exp list
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
+            emg_list = obj.get_exp_array(emg_dir,obj.condition_id);
+            
+            % get size of condition list
+            [exps, conds] = size(exp_list);
+            
+            % get freq parameters
+            freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
+            
+            % loop through experiments
+            for i = 1:exps
+                if isempty(exp_list{i})==0
+                    % load file
+                    load(fullfile(obj.proc_psd_path , exp_list{i}),'proc_matrix');
+                    
+                    % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
+                    [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)] = obtain_pmatrix_params(obj,proc_matrix,...
+                        freqx,strct1.Flow,strct1.Fhigh);
+                    
+                    % get desired parameter
+                    wave_temp = psd_prm(strct1.par_var,:);
+                    
+                    % empty psd_prm
+                    psd_prm = [];       
+                end
+  
+                % get time
+                [units,~,t,x_condition_time] = getcond_realtime(obj,wave_temp);
+                
+                % get title string
+                ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
+                
+                % create figure
+                figure();legend;
+                title(ttl_string)
+                subplot(2,1,1)
+                plot(t,wave_temp,'k','Linewidth',1,'DisplayName',...
+                    erase(strrep(exp_list{i},'_',' '),'.mat'));hold on;
+                
+                % add arrow
+                for iii = 1: conds-1
+                    xarrow = [x_condition_time(iii) x_condition_time(iii)];
+                    yarrow = [median(wave_temp)*1.2 median(wave_temp)*2];
+                    plot(xarrow,yarrow,'r','linewidth',2)
+                end
+                
+                % choose label
+                switch strct1.par_var
+                    case 1
+                        ylabel('Peak Power (V^2 Hz^{-1})')
+                    case 2
+                        ylabel('Peak Freq. (Hz)')
+                    case 3
+                        ylabel('Power Area (V^2)')
+                end
+                    
+                % format graph
+                obj.prettify_o(gca)
+                title([strrep(erase(exp_list{i},'.mat'),'_',' ') ' ' obj.channel_struct{obj.channel_No} ...
+                    ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'])
+                
+%                 % set limits
+%                 xlim([t(1) - t(end)/20, t(end)+ t(end)/20])
+%                 ylim([min(wave_temp)- mean(wave_temp)/20, max(wave_temp)+ mean(wave_temp)/20 ])
+                
+                % plot emg
+                load(fullfile(emg_path, emg_list{i}),'emg_signal');
+                if obj.bin_size ~= -1
+                    emg_signal = obj.merge_bins_signal(obj.bin_size,obj.dur,emg_signal);
+                end
+                subplot(2,1,2)
+                
+                plot(t,emg_signal,'k')
+                % set y,x label,title and format
+                title('EMG')
+                ylabel ('R.M.S')   
+                xlabel(['Time (' units ')'])  
+                obj.prettify_o(gca)
+            end
+        end
     end
     
 end
