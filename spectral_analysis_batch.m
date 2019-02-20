@@ -335,7 +335,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % remove signal outliers
         function ArteFree_signal = remove_signal_outliers(Fs,signal,thresh_index)
-            %remove_outliers(x,signal,10)
+            %remove_outliers(x.Fs,signal,10)
             Aver_time = 0.1*Fs; %in s
             
             rms_signal = rms(signal);
@@ -376,6 +376,27 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
 %             plot(ones(1,length(signal))*threshold,'r-.')
 %             plot(-ones(1,length(signal))*threshold,'r-.')
 %             spectral_analysis_batch.prettify_o(gca)
+        end
+        
+         % remove signal outliers
+        function ArteFree_signal = remove_bin_outliers(input,thresh_index)
+            %remove_outliers(x,signal,10)
+            % get threshold
+            threshold = thresh_index* median(input);
+            
+            % create artefact free signal
+            ArteFree_signal = input;
+           
+            % replace points that exceed threshold with median
+            for i = 1: length(input)
+                if input(i)>threshold
+                    ArteFree_signal(i)= median(input);
+                elseif input(i)<-threshold
+                    ArteFree_signal(i)= median(input);
+                end
+            end
+            
+           
         end
         
         % bin signal using rms value
@@ -440,6 +461,32 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
  
             end
             
+        end
+        
+        % detect movement
+        function binary_wave = threshold_detection(input,thresh_multiplier)
+            % [binary_wave] = threshold_detection(input,thresh_multiplier)
+            % binary_wave=spectral_analysis_batch.threshold_detection(emg_signal6,2);
+            
+            % normalise to baseline
+            mov_input = input - min(input);
+        
+            % get threshold
+            thresh = median(mov_input)*thresh_multiplier;
+           
+            % mov_input = input;
+            %  thresh = 0.5*10^-3;
+            
+            binary_wave = mov_input>thresh;
+%             
+%             binary_wave = binary_wave.* max(mov_input);
+%             
+%             disp(thresh)
+%             plot(mov_input,'k')
+%             hold on
+%             plot(binary_wave,'b')
+%             
+%             plot(ones(1,length(binary_wave))*thresh,'r')
         end
             
     end
@@ -732,11 +779,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % new field
             formats(1,1).type   = 'edit';
             formats(1,1).format = 'integer';
-            formats(1,1).limits = [0.4 200];
+            formats(1,1).limits = [0.4 1000];
             %
             formats(2,1).type   = 'edit';
             formats(2,1).format = 'integer';
-            formats(2,1).limits = [0.4 200];
+            formats(2,1).limits = [0.4 1000];
             %
             formats(3,1).type   = 'list';
             formats(3,1).style  = 'popupmenu';
@@ -1148,6 +1195,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get exp list
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
+            
+            % remove empty rows
+            exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
           
             obj.condition_time=[];
             for ii = 1:length(obj.condition_id)
@@ -1269,8 +1319,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function Get_EMG(obj,lfp_obj_path) % continue
             % create analysis folder
             k = strfind(obj.lfp_data_path,'\');
-            obj.save_path = fullfile(obj.lfp_data_path(1:k(end-1)-1),['analysis_' obj.channel_struct{obj.channel_No}]);
-            obj.proc_psd_path = fullfile(obj.save_path,'EMG_rms');
+            obj.save_path = fullfile(obj.lfp_data_path(1:k(end-1)-1),'EMG_rms_analysis');
+            obj.proc_psd_path = fullfile(obj.save_path,'rms_waves');
             mkdir(obj.save_path); mkdir(obj.proc_psd_path);
 
              % get lfp directory
@@ -1301,7 +1351,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % obtain noise free rms signal
                 ArteFree_signal = obj.remove_signal_outliers(obj.Fs,data_temp,30);
                 emg_signal = obj.emg_bin(ArteFree_signal,obj.winsize);%#ok
-                save(fullfile(obj.save_path,lfp_dir(i).name),'emg_signal')
+
+                % remove outliers
+%                emg_signal = obj.remove_bin_outliers(emg_signal,3);
+
+                %save file
+                save(fullfile(obj.proc_psd_path,lfp_dir(i).name),'emg_signal')
                 
                 % update progress bar
                 progressbar(i/length(lfp_dir))
@@ -1374,7 +1429,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 save_var = 0;
                 
                 % loop through blocks
-                while curr_block >= 1 || save_var == 0
+                while curr_block >= 1 && save_var == 0
                     
                     % get data on desired channel and block
                     output = data(datastart(obj.channel_No,curr_block): dataend(obj.channel_No,curr_block));
@@ -1440,11 +1495,15 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                             if length(strsplit(user_input{2},';')) ~= length(com_time)
                                 % get user input for data analysis
                                 disp ('input structure is not correct')
+                                save_var = 0;
                                 continue
+                            else
+                                curr_block = 0;
                             end 
-                            
+
                             % start from last block and remove 1 on each loop
                             curr_block = curr_block -1;
+
                         end                      
                     end                  
                 end
@@ -2382,7 +2441,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id);     
             
             % remove empty rows
-             exp_list(any(cellfun(@isempty, exp_list), 2),:) = []; 
+            exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
             
             % create figure
             figure(); hold on
@@ -2549,6 +2608,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get size of condition list
             [exps, conds] = size(exp_list);
             
+            % remove empty rows
+            exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
+            
             % get freq parameters
             freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
             
@@ -2589,6 +2651,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % get title string
                 ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
                 
+        
                 % create figure
                 figure();legend;
                 title(ttl_string)
@@ -3358,7 +3421,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % Plot between conditions (average)
         function [bar_vector,pval] = cmp_psd_prm_aver(obj,strct1,folder_list,ratio)
-
+            % parameter difference
+            par_vec = [1,2];
              % choose label
              switch strct1.par_var
                  case 1
@@ -3390,17 +3454,17 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                  
                  subplot(1,length(folder_list),i)
                  % choose between dot or bar plot
-                 obj.dot_plot(extr_feature(2:3,:),psd_object.condition_id(2:3),strct1.ind_v,strct1.mean_v...
+                 obj.dot_plot(extr_feature(par_vec,:),psd_object.condition_id(par_vec),strct1.ind_v,strct1.mean_v...
                      ,[col_face;col_edge])
                  
                  % format graph
                  obj.prettify_o(gca)
                  
-                 bar_vector{i} = extr_feature(3,:) - extr_feature(2,:);
-                 [~, pval(i)] = ttest(extr_feature(3,:),extr_feature(2,:));
+                 bar_vector{i} = extr_feature(par_vec(2),:) - extr_feature(par_vec(1),:);
+                 [~, pval(i)] = ttest(extr_feature(par_vec(2),:),extr_feature(par_vec(1),:));
                  bar_face_col(i,:) = col_face;
                  bar_edge_col(i,:) = col_edge;
-                 bar_labels{i} = psd_object.condition_id{3};
+                 bar_labels{i} = psd_object.condition_id{length(par_vec(1))};
                  
              end
             
@@ -3469,6 +3533,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get freq parameters
             freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
             
+            
+            f2 = figure();hold on;
             % loop through experiments
             for i = 1:exps
                 if isempty(exp_list{i})==0
@@ -3493,8 +3559,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
                 
                 % create figure
-                figure();legend;
+                f = figure();legend;
                 title(ttl_string)
+                set(0,'CurrentFigure',f);
                 subplot(2,1,1)
                 plot(t,wave_temp,'k','Linewidth',1,'DisplayName',...
                     erase(strrep(exp_list{i},'_',' '),'.mat'));hold on;
@@ -3509,15 +3576,16 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % choose label
                 switch strct1.par_var
                     case 1
-                        ylabel('Peak Power (V^2 Hz^{-1})')
+                        label_y = 'Peak Power (V^2 Hz^{-1})';
                     case 2
-                        ylabel('Peak Freq. (Hz)')
+                        label_y = 'Peak Freq. (Hz)';
                     case 3
-                        ylabel('Power Area (V^2)')
+                        label_y = 'Power Area (V^2)';
                 end
                     
                 % format graph
                 obj.prettify_o(gca)
+                ylabel(label_y)
                 title([strrep(erase(exp_list{i},'.mat'),'_',' ') ' ' obj.channel_struct{obj.channel_No} ...
                     ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'])
                 
@@ -3530,16 +3598,33 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 if obj.bin_size ~= -1
                     emg_signal = obj.merge_bins_signal(obj.bin_size,obj.dur,emg_signal);
                 end
+                
+                % get current figure
+                set(0,'CurrentFigure',f);
                 subplot(2,1,2)
                 
+                % add plot
                 plot(t,emg_signal,'k')
                 % set y,x label,title and format
                 title('EMG')
                 ylabel ('R.M.S')   
                 xlabel(['Time (' units ')'])  
                 obj.prettify_o(gca)
+                
+                % create correlation plot
+                set(0,'CurrentFigure',f2);
+                subplot(ceil(exps/3),3,i)
+                corr_plot(emg_signal,wave_temp,'Spearman');
+                ylabel (label_y)   
+                xlabel('EMG - r.m.s')  
+                
             end
+            % bring correlation figure to front
+           figure(f2); 
         end
+        
+        
     end
+    
     
 end
