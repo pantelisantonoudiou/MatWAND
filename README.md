@@ -2,7 +2,7 @@
  NeuroFFT is a MatLab application for automated oscillation analysis.
  
  
- ![Banner](/images/Interface.png)
+ ![Banner](/Images/Interface.png)
  
  ## Documentation index
 - **[Installation](/Docs/Install.md)**
