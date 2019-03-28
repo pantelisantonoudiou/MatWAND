@@ -6,5 +6,6 @@
  
  ## Documentation index
 - **[Installation](/Docs/Install.md)**
+- **[Input](/Docs/Inputs.md)**
  
 
