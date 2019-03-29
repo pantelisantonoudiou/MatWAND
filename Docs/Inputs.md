@@ -10,7 +10,7 @@ b) .binary files
 
 Any of the following file formats might be used (supported by matlab memmap function https://www.mathworks.com/help/matlab/ref/memmapfile.html)
 
-'int8','int16','int32','int64','uint8','uint16','uint32','uint64','single','double'
+'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'single', 'double'
 
 
 **[<< Back to Main Page](/README.md)**
