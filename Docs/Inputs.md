@@ -8,7 +8,7 @@ Input structure is a .mat file that contains:
 
 i) A vector called `data` containing the raw voltage trace 
 
-** For multiple channels `data` = channel1 + channel2 + chanel3 **
+**For multiple channels `data` = channel1 + channel2 + chanel3**
 
 ii) A variable called `samplerate` containing the sampling rate per second 
 
@@ -20,10 +20,11 @@ iv)  A vector called `dataend` containing the end time(s) for each channel (in s
 
 v) For automatic sepration of files include:
 
-i) comments in a Rectangular Character Array called `com_text`
+i) comments in a Rectangular Character Array called `comtext`
 
 ii) and their associated times in a vector called `com`
 
+You can find an example **[<< Here](/README.md)**
 
 
 # b) .binary files
