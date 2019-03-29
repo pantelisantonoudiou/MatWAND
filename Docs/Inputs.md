@@ -5,7 +5,9 @@ The inputs need to be structured in one of two formats in order to be processed 
 
 # a) .mat files containing the raw traces
 Input structure is data file contains:
+
 i) The raw voltage trace in a vector called `data`
+
 ii) a variable containing the sampling rate per second called `samplerate`
 
 
