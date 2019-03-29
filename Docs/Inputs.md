@@ -24,7 +24,7 @@ i) comments in a Rectangular Character Array called `comtext`
 
 ii) and their associated times in a vector called `com`
 
-You can find an example **[<< Here](/README.md)**
+You can find an example **[<< Here](/examples)**
 
 
 # b) .binary files
