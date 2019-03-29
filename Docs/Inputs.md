@@ -12,5 +12,8 @@ Any of the following file formats might be used (supported by matlab memmap func
 
 'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'single', 'double'
 
+In case single/double files are not used a normalisation number is needed to convert the files back to their original value.
+e.g. int16 files from labchart need to be divided by 320000
+
 
 **[<< Back to Main Page](/README.md)**
