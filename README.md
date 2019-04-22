@@ -8,5 +8,5 @@
  ## Documentation index
 - **[Installation](/Docs/Install.md)**
 - **[Input](/Docs/Inputs.md)**
- 
+- **[Input](/Docs/Step-by-Step.md)** 
 
