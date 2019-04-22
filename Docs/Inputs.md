@@ -22,7 +22,7 @@ v) For automatic sepration of files include:
 
 i) comments in a Rectangular Character Array called `comtext`
 
-ii) and their associated times in a vector called `com`
+ii) and their associated times in a vector called `com` (time in samples)
 
 You can find an example **[<< Here](/examples)**
 
