@@ -2,8 +2,7 @@
 
 1) Load Folder Directory (matlab or binary files).
 
-2) Convert voltage traces to power spectral density using the fft transform (https://www.mathworks.com/help/matlab/ref/fft.html) and store
-to raw_psd_user folder.
+2) Convert voltage traces to power spectral density (PSD) using the fft transform (https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html) and store to "raw_psd" folder.
 
 + optional file separation for .mat files.
 
