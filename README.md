@@ -3,7 +3,7 @@
  
  ![Banner](/Images/Interface.PNG)
  
- MatWAND was written in MATLAB2018a. It is is only supported from MATLAB2018a and onwards.
+ MatWAND was written in MATLAB 2018a. It will be supported from versions 2018a onwards.
  
  ## Documentation index
 - **[Installation](/Docs/Install.md)**
