@@ -8,7 +8,7 @@ Input structure is a .mat file that contains:
 
 i) A vector called `data` containing the raw voltage trace 
 
-**For multiple channels `data` = channel1 + channel2 + chanel3**
+**For multiple channels `data` = channel 1 + channel 2 + channel 3**
 
 ii) A variable called `samplerate` containing the sampling rate per second 
 
