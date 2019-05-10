@@ -1,7 +1,7 @@
 # Inputs
-MatWAND was originally designed to process data from labchart.
+MatWAND was originally designed to process data saved from labchart into matlab and adibin files.
 
-The inputs need to be structured in one of two formats in order to be processed by MatWAND
+Therefore the inputs need to be structured in one of two following formats in order to be processed by MatWAND.
 
 # a) .mat files containing the raw traces
 Input structure is a .mat file that contains:
@@ -18,7 +18,7 @@ iv)  A vector called `dataend` containing the end time(s) for each channel (in s
 
 -Optional-
 
-v) For automatic sepration of files include:
+v) For automatic sepration of files based on conditions please include:
 
 i) comments in a Rectangular Character Array called `comtext`
 
@@ -28,8 +28,7 @@ You can find an example **[<< Here](/examples)**
 
 
 # b) .binary files
-
-Any of the following file formats might be used (supported by matlab memmap function https://www.mathworks.com/help/matlab/ref/memmapfile.html)
+The binary files contain only the data in raw voltage trace and currently have no capabability of automatically separating conditions. Any of the following file formats might be used (supported by matlab memmap function https://www.mathworks.com/help/matlab/ref/memmapfile.html)
 
 'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'single', 'double'
 
