@@ -13,12 +13,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     %
     % psd_prm_time(x,a), aver_psd_prm(x,a)
     % 1- peak power, 2 - peak freq, 3. power area
-    %     a.Flow = 2
-    %     a.Fhigh = 15
-    %     a.par_var = 2
-    %     a.norms_v = false
-    %     a.ind_v = false
-    %     a.mean_v = true
+%         a.Flow = 2
+%         a.Fhigh = 15
+%         a.par_var = 2
+%         a.norms_v = false
+%         a.ind_v = false
+%         a.mean_v = true
     %
 %     a.band1 = 5
 %     a.band2 = 10
@@ -29,18 +29,37 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
 %     a.mean_v = true
     
     properties
+        
+        set_array = struct; % structure to store class data
+        
+%         set_array.ext = app.file_ext; % file_ext
+%         set_array.channel_struct = app.ChannelStructureEditField.Value; % Channel structure
+%         set_array.channel = app.ChannelAnalyzedEditField.Value; % Channel to be analyzed
+%         
+%         set_array.file_format =  app.BinaryFormatEditField.Value; % file format
+%         set_array.norm = app.NormFactorEditField.Value; % normalization factor for values (y)
+%         set_array.samplerate = app.SamplerateEditField.Value; % sampling rate (samples per second)
+%         set_array.start_time = app.Analysis_Duration.Value; % start time for file analysis
+%         set_array.end_time = app.Analysis_Duration_2.Value; % end time for file analysis
+%         
+%         set_array.fft_window_type = app.WindowTypeDropDown.Value; % spectral window type
+%         set_array.fft_overlap = app.OverlapEditField.Value; % percentage overlap for fft window segments
+%         set_array.fft_windowsz = app.SizesecEditField.Value; % duration (seconds) of fft window
+        
         % wave properties
-        dur  = 5  % Window duration of the fft transform (in seconds)
-        Fs = 4000;% sampling rate
-        winsize % fft window size
+        dur  = 5  % spectral window duration of the fft transform (in seconds)
+        Fs = 4000; % sampling rate
+        winsize % spectral window duration in samples (depends on sampling rate)
         block_number = 1;
         channel_No = 1;
         channel_struct = {'BLA'}
         
-        % for multichannel channel long recordings
-        Tchannels = 3;
+        % for multichannel long recordings
+        Tchannels = 3; % channels per file
         Nperiods = 12; % in hours
-        period_dur = 60; % in minutes  
+        start_time = 0 % in hours
+        
+        period_dur = 60; % in minutes  % sets blocks to be analysed from binary files
         
         % loading paths
         lfp_data_path = 'C:\Users\panton01\Desktop\INvivo_data\Test\raw_data\';% LFP folder path
@@ -79,7 +98,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     
     % Static methods
     
-    methods(Static) % MISC % 
+    methods(Access = public,Static) % MISC % 
         
         % get unseparated condition (varied between conditions)
         function copy_user_files(source,dest,file_type)
@@ -156,11 +175,47 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
 %             cellfun(@(folder_list)[folder_list 'GHz'],folder_list,'UniformOutput',false)
         end
         
-        
+        % down sample data using decimate
+        function down_dec_sample(mat_path,down_rate,ch_name)
+            
+            % get lfp directory
+            lfp_dir = dir(fullfile(mat_path,'*.mat'));
+            
+            % make new folder to store down_sampled traces
+            k = strfind(mat_path,'\');
+            downsamp_path = fullfile(mat_path(1:k(end)-1),['resamp_traces_' ch_name ]);
+            mkdir(downsamp_path);
+            
+            % Initialize progress bar
+            progressbar('Down sampling ...')  
+             
+            % loop through experiments and perform fft analysis
+            for i = 1:length(lfp_dir)
+                
+                % load file
+                load(fullfile(mat_path, lfp_dir(i).name),'data','samplerate','datastart','dataend','com','comtext')
+                
+                % low pass filter data by 1/down_rate and down sample
+                data = decimate(data,down_rate,30,'fir');
+                
+                % resize samplerate , comments, datastart and dataend
+                samplerate = samplerate/down_rate;
+                com(:,3) = round(com(:,3)/down_rate);
+                datastart = ceil(datastart/down_rate);
+                dataend = round(dataend/down_rate);
+                
+                % save filtered traces in new folder
+                save(fullfile(downsamp_path,lfp_dir(i).name),'data','samplerate','datastart','dataend','com','comtext')
+                
+                % update progress bar
+                progressbar(i/length(lfp_dir))
+                
+            end
+        end
         
     end
         
-    methods(Static) % Array sorting and filtering %
+    methods(Access = public,Static) % Array sorting and filtering %
         
         % create sorted array
         function exp_list = get_exp_array(mat_dir,conditions)
@@ -266,8 +321,29 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
         end
+       
         
-        %not used currently%
+        
+        % sort raw LFP list
+        function exp_list = sort_rawLFP_list(mat_dir)
+            % exp_list = sort_rawLFP_list(mat_dir)
+            
+            % get exp array
+            exp_list = spectral_analysis_batch.cellfromstruct(mat_dir,1);
+            
+            for i = 1 : length(exp_list)
+                k  = strfind(exp_list{i},'_');
+                index_list(i) = str2double(exp_list{i}(k(1)+1:k(2)-1));
+            end
+            
+            % sort 
+            [~,idx] = sort(index_list);
+            exp_list = exp_list(idx);
+        end
+        
+        
+        
+        %%% not used currently %%%
         
         % sort list % needs completion
         function num_list = sort_list(raw_list,start_str,end_str)
@@ -328,170 +404,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 outarray = [outarray str arrayin{i+1}];
             end
         end
-        
-    end
-    
-    methods(Static) % EMG related
-        
-        % remove signal outliers
-        function ArteFree_signal = remove_signal_outliers(Fs,signal,thresh_index)
-            %remove_outliers(x.Fs,signal,10)
-            Aver_time = 0.1*Fs; %in s
-            
-            rms_signal = rms(signal);
-            
-            threshold = thresh_index* rms_signal;
-            
-            ArteFree_signal = signal;
-            
-            for i = 1:Aver_time
-                if signal(i)>threshold
-                    ArteFree_signal(i)= median(signal(i:i+Aver_time));
-                elseif signal(i)<-threshold
-                    ArteFree_signal(i)= median(signal(i:i+Aver_time));
-                end
-            end
-            
-            
-            for i = Aver_time+1:length(signal)- Aver_time
-
-                if signal(i)>threshold
-                    ArteFree_signal(i)= median(signal(i-Aver_time:i+Aver_time));
-                elseif signal(i)<-threshold
-                    ArteFree_signal(i)= median(signal(i-Aver_time:i+Aver_time));
-                end
-            end
-            
-            for i = length(signal)- Aver_time +1 : length(signal)
-                if signal(i)>threshold
-                    ArteFree_signal(i)= median(signal(i-Aver_time:i));
-                elseif signal(i)<-threshold
-                    ArteFree_signal(i)= median(signal(i-Aver_time:i));
-                end
-            end
-            
-            
-%             % plot results
-%             plot(signal,'k','LineWidth',1.5); hold on; plot(ArteFree_signal,'b')
-%             plot(ones(1,length(signal))*threshold,'r-.')
-%             plot(-ones(1,length(signal))*threshold,'r-.')
-%             spectral_analysis_batch.prettify_o(gca)
-        end
-        
-         % remove signal outliers
-        function ArteFree_signal = remove_bin_outliers(input,thresh_index)
-            %remove_outliers(x,signal,10)
-            % get threshold
-            threshold = thresh_index* median(input);
-            
-            % create artefact free signal
-            ArteFree_signal = input;
-           
-            % replace points that exceed threshold with median
-            for i = 1: length(input)
-                if input(i)>threshold
-                    ArteFree_signal(i)= median(input);
-                elseif input(i)<-threshold
-                    ArteFree_signal(i)= median(input);
-                end
-            end
-            
-           
-        end
-        
-        % bin signal using rms value
-        function emg_signal = emg_bin(input_wave,winsize)
-            % emg_signal = emg_bin(input_wave,winsize)
-            % outputs = emg_signal
-            % inputs = input_wave,winsize
-            
-            % Spectrogram settings:
-            overlap = round(winsize/2);
-            
-            % get correct channel length for analysis
-            Channel_length = length(input_wave)-(rem(length(input_wave),overlap));
-            % fprintf('%d samples were discarded to produce equal size windows\n',(rem(length(input_wave),winsize)))
-            
-            % preallocate waves
-            emg_signal = zeros(1,(Channel_length/overlap)-2);
-            
-            % removes dc component
-            input_wave = input_wave - mean(input_wave);
-            
-            % initialise counter
-            Cntr = 1;
-            for i=1:overlap:Channel_length -(overlap) %loop through signal segments with overlap
-                %%get segment
-                signal = input_wave(i:i+winsize-1);
-                
-                % save power spectral density over time
-                emg_signal(1,Cntr)= rms(signal);
-                
-                % increase counter
-                Cntr = Cntr+1;
-            end
-            
-        end
-            
-        % merge bins for smoothing and long files
-        function merged_wave = merge_bins_signal(bin_size,org_bin_size,input_wave)
-            % p_matrix_out = merge_bins(obj,power_matrix)
-            
-            % get elements to be averaged
-            merge_factor = bin_size/org_bin_size;
-            
-            %get size of current matrix
-            [W,L] = size(input_wave);
-            
-            % get reps required to cover the file
-            new_L = floor(L/merge_factor); 
-            
-            % preallocate matrix
-            merged_wave =  zeros(W,new_L);
-            
-            % new counter
-            cntr = 1; 
-            
-            for i = 1: merge_factor:L-merge_factor+1 %loop through psd bins
-                % get mean
-                merged_wave(cntr) = mean(input_wave(:,i:i+merge_factor-1),2);
-                
-                % update counter
-                cntr = cntr +1;
- 
-            end
-            
-        end
-        
-        % detect movement
-        function binary_wave = threshold_detection(input,thresh_multiplier)
-            % [binary_wave] = threshold_detection(input,thresh_multiplier)
-            % binary_wave=spectral_analysis_batch.threshold_detection(emg_signal6,2);
-            
-            % normalise to baseline
-            mov_input = input - min(input);
-        
-            % get threshold
-            thresh = median(mov_input)*thresh_multiplier;
-           
-            % mov_input = input;
-            %  thresh = 0.5*10^-3;
-            
-            binary_wave = mov_input>thresh;
-%             
-%             binary_wave = binary_wave.* max(mov_input);
-%             
-%             disp(thresh)
-%             plot(mov_input,'k')
-%             hold on
-%             plot(binary_wave,'b')
-%             
-%             plot(ones(1,length(binary_wave))*thresh,'r')
-        end
-            
+        %%% ----------------- %%%
     end
         
-    methods(Static) % PSD related %
+    methods(Access = public,Static) % PSD related %
                
         %%% Extracting and manipulating the PSD %%%
         % fft analysis with hanning window
@@ -566,14 +482,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function psd_out = remove_noise_psd(psd,Fs,winsize,noise_freq,width_f)
             %psd_noise_remove(band_freq,width_f,psd)
             
-            %removing boise boundaries
+            % removing boise boundaries
             Fnoisemin = spectral_analysis_batch.getfreq(Fs,winsize,noise_freq - width_f); %Fnoisemin= Fnoisemin+1-F1;
             Fnoisemax = spectral_analysis_batch.getfreq(Fs,winsize,noise_freq + width_f); %Fnoisemax= Fnoisemax+1-F1;
             
-            %replace noise band range with nans
+            % replace noise band range with nans
             psd(Fnoisemin:Fnoisemax) = nan;
             
-            %replace nans with pchip interpolatipjn
+            % replace nans with pchip interpolatipjn
             psd_out = fillmissing(psd,'pchip');
             
         end 
@@ -581,16 +497,16 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         % extract power area, peak power and peak freq
         function [Peak,peak_freqx,p_area] = psd_parameters(psd_raw,freqx) % ,peak_width
             %%[Peak,peak_freqx,p_area]= psd_parameters(psd_raw,freqx)
-            %input parameters are PSD and frequency vectors
+            % input parameters are PSD and frequency vectors
             
-            %smooth psd curve (smooth factor of 5)
+            % smooth psd curve (smooth factor of 5)
             smth_psd = smooth_v1(psd_raw);
             
-            %find peak power and index at which the peak power occurs
+            % find peak power and index at which the peak power occurs
             [Peak, x_index] = max(smth_psd);
             peak_freqx = freqx(x_index);
             
-            %get power area
+            % get power area
             p_area = sum(smth_psd);
             
         end
@@ -615,12 +531,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % readjust fit to always be below the min psd value
             y_fit  = y_est; %-abs(mean(psd_log - y_est));
             
-            plot(y_fit); hold on; plot(psd_log)
+%             plot(y_fit); hold on; plot(psd_log)
 %             %linearise psd
 %             linear_fft = psd_log - y_new;
         end
 
-         % Normalise power matrix by total power
+        % Normalise power matrix by total power
         function norm_mat = TotalPower_norm(power_matrix) 
             % norm_mat = TotalPower_norm(power_matrix) 
             
@@ -631,9 +547,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
               end
         end
         
+        % multiple fft choices and functions --- needs completion
+        function choose_psd(choice)
+              % welch
+%             tic;[pxx,f] = pwelch(data,5*samplerate,2.5*samplerate,[1:0.2:100],samplerate);toc
+        end
     end
     
-    methods(Static) % user & plot related %
+    methods(Access = public,Static) % User & plot related %
         %%% unpacking matlab and adibin data %%%
         
         % unpack labchart matlab data
@@ -684,10 +605,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         % add baseline and drug index on power plot from lab chart LFP
         function [com_time,Txt_com] = add_comments(Fs,input,com,comtext,t,block)
             %[com_time,Txt_com] = add_comments(Fs,input,com,comtext,t,block)
-            %add lines according to comments
+            % add lines according to comments
             hold on;
             counter=0;
-            %get normalised comment times in minutes
+            % get normalised comment times in minutes
             % com_time = round(com(:,3)./Fs/60);
             com_time = com(:,3)./Fs;
             %choose only com times in the analyzed block
@@ -704,7 +625,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 plot([counter+10,com_time(ii)-10],[Yval,Yval],C{ii},'linewidth',2)
                 %label
                 if(ii == 1)
-                    text((com_time(ii)+counter)/2,Yval*1.05, 'baseline                   '...
+                    text((com_time(ii)+counter)/2,Yval*1.05, 'baseline'...
                         ,'HorizontalAlignment','center','Color','black','FontSize',14)
                 else
                     text((com_time(ii)+counter)/2,Yval*1.05, Txt_com(ii-1,:),...
@@ -738,7 +659,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function separate_psd(raw_pmat,exp_name,sep_vector,com_time,dur_sec)
             % convert to drug times to power matrix block times
             com_time = com_time/(dur_sec/2);
-            com_time = [1 floor(com_time(1:end-1))' com_time(end)]; 
+            com_time = [1 floor(com_time(1:end-1))' com_time(end)];
+            
+            % do not allow comments to exceed max
+            com_time(com_time > size(raw_pmat,2)) = size(raw_pmat,2);
             
             for i = 1: length(com_time)-1
                 if strcmp(sep_vector{i}, 'false') == 0
@@ -909,7 +833,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-    methods(Static) % Plot related
+    methods(Access = public,Static) % Plot related
         
         % title,x- ,y- labels for subplot
         function super_labels(title_str,xlabel_str,ylabel_str)
@@ -955,10 +879,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % get color for vectors
-        function [col_face,col_edge] = color_vec2(col_idx)
+        function [col_face,col_edge,col_light] = color_vec2(col_idx)
              % create colour vectors
             col_mat = [0 0 0;0 0 1; 1 0 0 ;0.8 0.2 0.9 ; 1 0.6 0.2];
             col_sem_mat = [0.5 0.5 0.5; 0.5 0.5 1; 1 0.5 0.5; 0.8 0.5 0.9; 1 0.8 0.6]; 
+            col_light = [0.8 0.8 0.8; 0.8 0.8 1; 1 0.8 0.8; 1 0.8 1; 1 0.9 0.8];
             %= col_mat; col_sem_mat(col_sem_mat==0)=0.9;
             
             % never allow color index to exceed length of color vector
@@ -970,6 +895,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             %return color vectors
             col_edge = col_mat(col_idx,:); col_face = col_sem_mat(col_idx,:); 
+            col_light = col_light(col_idx,:);
         end
         
         % dot plot
@@ -982,6 +908,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get condition and experiment number
             [conds, exps] = size(inarray);
+            
+            % Remove Nans
+            if conds >1
+                inarray = extr_feature(:,all(~isnan(inarray)));
+            end
             
             % calculate sem
             sem_pkpower = std(inarray,0,2)/sqrt(exps);
@@ -1031,8 +962,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             [conds, exps] = size(inarray);
             
             % calculate sem
-            sem_pkpower = std(inarray,0,2)/sqrt(exps);
-            
+            sem_pkpower = nanstd(inarray,0,2)/sqrt(exps);
+            hold on
             if indiv_var ==1
                 if conds>1
                     plot(inarray,'o','color',[0.5 0.5 0.5],'MarkerFaceColor', [0.5 0.5 0.5],'MarkerSize',4);
@@ -1042,12 +973,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             if mean_var == 1
-                bar(mean(inarray,2),'FaceColor',  'none', 'EdgeColor', 'k','Linewidth',1.5)
-                errorbar(mean(inarray,2),sem_pkpower,'.','color','k','Linewidth',1.5)
+                bar(nanmean(inarray,2),'FaceColor',  'none', 'EdgeColor', 'k','Linewidth',1.5)
+                errorbar(nanmean(inarray,2),sem_pkpower,'.','color','k','Linewidth',1.5)
             end
             
             % format graph
-            ax1= gca;spectral_analysis_batch.prettify_o(ax1)
+            spectral_analysis_batch.prettify_o(gca)
             
             % set tick number
             x_ticks = 1:conds;
@@ -1060,8 +991,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             xticks(x_ticks); xticklabels(strrep(conditions,'_',' '))
             
             % set y lim boundaries
-            ylim([min(inarray(:))- mean(inarray(:))*0.1...
-                max(inarray(:))+ mean(inarray(:))*0.1]);
+            ylim([min(inarray(:))- nanmean(inarray(:))*0.1...
+                max(inarray(:))+ nanmean(inarray(:))*0.1]);
             
         end
         
@@ -1078,7 +1009,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     end
     
     % Object methods
-    
+   
     methods % - Misc & object load %  
    
         % class constructor
@@ -1095,7 +1026,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get analysis and raw psd folder paths
             k = strfind(obj.lfp_data_path,'\');
             obj.save_path = fullfile(obj.lfp_data_path(1:k(end-1)-1),['analysis_' obj.channel_struct{obj.channel_No}]);
-            obj.raw_psd_path = fullfile(obj.save_path,['raw_psd_' obj.channel_struct{obj.channel_No}]);
+            obj.raw_psd_path = fullfile(obj.save_path,'raw_psd'); % ['raw_psd_' obj.channel_struct{obj.channel_No}]
             
             % create analysis folder
             mkdir(obj.save_path);
@@ -1116,11 +1047,44 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             copy_obj = copy(psd_object);
         end
         
+        % reset paths of migrated object
+        function reloc_obj = reset_migrated_obj_path(obj)
+            
+            new_path = uigetdir(obj.desktop_path);
+            
+            % check if user gave input
+            if new_path == 0
+                return
+            end
+            
+            load(fullfile(new_path,'psd_object'));%#ok
+            
+            % change paths to match the new path
+            
+            psd_object.desktop_path = obj.desktop_path; % path to desktop
+            
+            psd_object.save_path = new_path; % analysed folder and object path
+            
+            psd_object.lfp_data_path = fullfile(new_path,'raw_data');% LFP folder path
+            psd_object.raw_psd_path = fullfile(new_path,'raw_psd'); % raw psd folder path
+            psd_object.raw_psd_user = fullfile(new_path,'raw_psd/raw_psd_user'); % raw unseparated psd path            
+            psd_object.proc_psd_path = fullfile(new_path,'processed_psd'); % processed psd path
+            psd_object.excld_path = fullfile(new_path,'excluded'); % excluded psd path
+            psd_object.export_path = fullfile(new_path,'exported');% path for exported tables and parameters
+            
+            % save_changes
+            save(fullfile(new_path,'psd_object'),'psd_object')
+            
+            %copy object for use
+            reloc_obj = copy(psd_object);
+            
+        end
+        
         % create bin table to observe experiment length (hours)
         function [colnames, the_list,exp_table] = bin_table(obj)
             
             % get lfp directory
-            lfp_dir = dir(fullfile(obj.lfp_data_path,'*.adibin'));        
+            lfp_dir = dir(fullfile(obj.lfp_data_path, ['*.' obj.set_array.ext]));        
   
             % loop through experiments and get exp name and length
             for ii = 1:length(lfp_dir)
@@ -1129,11 +1093,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 Full_path = fullfile(obj.lfp_data_path, lfp_dir(ii).name);
                                
                 % map the file to memory
-                m = memmapfile(Full_path,'Format','int16');  
+                m = memmapfile(Full_path,'Format', obj.set_array.file_format);  
                 
                 % create list
                 the_list{ii,1} = lfp_dir(ii).name;
-                the_list{ii,2} = length(m.data)/3/60/60/obj.Fs;
+                the_list{ii,2} = length(m.data)/obj.Tchannels/60/60/obj.Fs;
                 
                 %clear memmap object
                 clear m
@@ -1143,6 +1107,34 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             colnames = {'Exp-Name', 'Exp-Length-Hours'};
             exp_table = cell2table(the_list,'VariableNames', {'Exp_Name' 'Exp_Length_hours'});     
         end
+        
+        % create mat table to observe experiment length (minutes)
+        function [colnames, the_list,exp_table] = mat_raw_table(obj)
+            % [colnames, the_list,exp_table] = mat_table(obj)
+            % outputs list of file names and duration in minutes
+            % get lfp directory
+            lfp_dir = dir(fullfile(obj.lfp_data_path ,'*.mat'));
+            
+            % loop through experiments and get exp name and length
+            for ii = 1:length(lfp_dir)
+                
+                % get file path
+                Full_path = fullfile(obj.lfp_data_path, lfp_dir(ii).name);
+                
+                % map the file to memory
+                load(Full_path,'data','samplerate');
+                
+                % create list
+                the_list{ii,1} = lfp_dir(ii).name;
+                
+                % time
+                the_list{ii,2} = length(data)/obj.Tchannels/60/samplerate;
+
+            end
+            
+            colnames = {'Exp-Name', 'Exp_Length_mins'};
+            exp_table = cell2table(the_list,'VariableNames', {'Exp_Name' 'Exp_Length_mins'});
+        end  
         
         % create mat table to observe experiment length (minutes)
         function [colnames, the_list,exp_table] = mat_table(obj)
@@ -1160,7 +1152,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % map the file to memory
                 load(Full_path,'power_matrix');
                 
-                %get length of power matrix
+                % get length of power matrix
                 [~,len] = size(power_matrix);
                 
                 % create list
@@ -1315,61 +1307,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-    methods % EMG analysis %       
-        function Get_EMG(obj,lfp_obj_path) % continue
-            % create analysis folder
-            k = strfind(obj.lfp_data_path,'\');
-            obj.save_path = fullfile(obj.lfp_data_path(1:k(end-1)-1),'EMG_rms_analysis');
-            obj.proc_psd_path = fullfile(obj.save_path,'rms_waves');
-            mkdir(obj.save_path); mkdir(obj.proc_psd_path);
-
-             % get lfp directory
-            lfp_dir = dir(fullfile(obj.lfp_data_path,'*.mat'));
-            
-            % Get Fs
-            Full_path = fullfile(obj.lfp_data_path, lfp_dir(1).name);
-            load(Full_path,'samplerate')
-            obj.Fs = samplerate(obj.channel_No);
-            
-            % get winsize
-            s = load(fullfile(lfp_obj_path,'psd_object'));
-            obj.dur = s.psd_object.dur;
-            obj.winsize = round(obj.Fs*obj.dur);
-            
-            % initialise progress bar
-            progressbar('Progress')
-            
-            % loop through experiments and perform fft analysis
-            for i = 1:length(lfp_dir)
-                % load file
-                Full_path = fullfile(obj.lfp_data_path, lfp_dir(i).name);
-                load(Full_path,'data','datastart','dataend')
-                
-                % get data on desired channel and block 
-                data_temp = data(datastart(obj.channel_No,obj.block_number): dataend(obj.channel_No,obj.block_number));
-                
-                % obtain noise free rms signal
-                ArteFree_signal = obj.remove_signal_outliers(obj.Fs,data_temp,30);
-                emg_signal = obj.emg_bin(ArteFree_signal,obj.winsize);%#ok
-
-                % remove outliers
-%                emg_signal = obj.remove_bin_outliers(emg_signal,3);
-
-                %save file
-                save(fullfile(obj.proc_psd_path,lfp_dir(i).name),'emg_signal')
-                
-                % update progress bar
-                progressbar(i/length(lfp_dir))
-            end
-            
-            %save psd_object
-            psd_object = saveobj(obj);%#ok
-            save(fullfile(obj.save_path,'psd_object.mat'),'psd_object');
-        end
-    end
-    
-    methods % A - fft analysis %
-          
+    methods % A - FFT analysis %
+        
+        %%% Automatic Separation %%%
+        
         % extract power matrix from mat file (files separated using matlab)
         function extract_pmatrix_mat_user(obj,Flow,Fhigh) 
             %Enter parameters for time-frequency analysis
@@ -1389,8 +1330,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             make_analysis_dir(obj)
 
             % make raw exvivo folder
-            obj.raw_psd_user =  fullfile(obj.raw_psd_path,...
-                ['raw_psd_user_' obj.channel_struct{obj.channel_No}]); 
+            obj.raw_psd_user =  fullfile(obj.raw_psd_path, 'raw_psd_user'); %['raw_psd_user_' obj.channel_struct{obj.channel_No}]
             mkdir(obj.raw_psd_user)
             
             % get lfp directory
@@ -1439,15 +1379,17 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     
                     % get time index
                     [~,L] = size(power_matrix);
-                    t =(1:L)*(obj.dur/2) ;%/60; % time in minutes
+                    t =(1:L)*(obj.dur/2); % time in minutes
                     
                     % obtain power area and peak freq for initial analysis and
                     % remove outliers for plotting
                     [~, peak_freq, power_area] = obtain_pmatrix_params(obj,power_matrix,freq,Flow,Fhigh);
-                    [power_area,~] = obj.remove_outliers(power_area,3);
+                    [power_area,out_vector] = obj.remove_outliers(power_area,3);
+                    power_area(out_vector)=nan;
+                    peak_freq(out_vector)=nan;
                     
                     %%%%Plot power area and peak frequency%%%%
-                    figure ()
+                    figure('units','normalized','position',[0.2 0.4 .6 .4])
                     
                     subplot(2,1,1); 
                     
@@ -1459,7 +1401,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     
                     subplot(2,1,2);
                     plot(t,peak_freq,'k')
-                    xlabel('Time (Sec)') % x-axis label
+                    xlabel('Time (sec)') % x-axis label
                     ylabel('Peak Freq. (Hz)'); % y-axis label
                     ax2 = gca; obj.prettify_o(ax2);title(strrep(lfp_dir(i).name,'_',' '));
                                        
@@ -1530,10 +1472,20 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % consistent time separation across conditions and experiments
-        function extract_psd_pharm(obj)
-            % plot power spectral density within desired frequencies
-            % from Flow to Fhigh % 
-            cond_time = (obj.condition_time * 60) / (obj.dur/2);% convert to blocks
+        function file_split_by_time(obj)
+            % file_split_by_time(obj)
+            
+            % make all zeros except baseline to 1
+            cond_time = obj.condition_time;
+            
+            % get separation vector
+            cond_time = (cond_time * 60) / (obj.dur/2);% convert to blocks
+            
+%             if length(cond_time)>2
+%                 idx = find(cond_time==0);
+%                 idx(idx == 1)=[];idx(idx == 2)=[];
+%                 cond_time(idx) = 1;
+%             end
             
             % get mat files in load_path directory
             mat_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
@@ -1544,39 +1496,52 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get size for each condition
             [exps, conds] = size(cond_list);
-                          
+            
+            % make cond time to matrix for loop configuration
+            cond_time = reshape(cond_time,2,conds)'; 
+            
+            % initialise progress bar
+            progressbar('Separating files')
+            
             for i = 1 : exps %loop through experiments
                 
                 for ii = 1:conds %loop through condiitons
                     
-                    if isempty(cond_list{i,ii})==0 % check if file exits
+                    if isempty(cond_list{i,ii})==0 % check if file exists
                         
                         % file load
                         load(fullfile(obj.raw_psd_user , cond_list{i,ii}),'power_matrix');
+                        
                         % get matrix size
                         [~,len] = size(power_matrix);
                         
-                        if cond_time(ii)>len %check if extracted length exceeds bounds
-                            cond_list{i,ii}
+                        if (cond_time(ii,2)-cond_time(ii,1))>len % check if extracted length exceeds bounds
+                            disp(['the file' cond_list{i,ii} 'exceeds size bounds'])
                         else
+                            
                             % get extracted times for each condition
-                            if ii == 1
-                                power_matrix = power_matrix(:,end - cond_time(ii)+1:end);
+                            if cond_time(ii,1)<0
+                                power_matrix = power_matrix(:,end + cond_time(ii,1):end + cond_time(ii,2));
                             else
-                                power_matrix = power_matrix(:, 1:cond_time(ii));
+                                power_matrix = power_matrix(:,cond_time(ii,1)+1:cond_time(ii,2));
                             end
                             
-                            %save file
+                            %save file                        
                             save(fullfile(obj.raw_psd_path,cond_list{i,ii}),'power_matrix')
                         end
                     end
                 end
+                
+                % update progress bar
+                progressbar (i/exps)
             end
             
             % save psd_object
             psd_object = saveobj(obj);%#ok
             save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
         end
+        
+        %%% Manual Separation %%%
         
         % extract power matrix from mat file (files per condition separated)
         function extract_pmatrix_mat(obj)
@@ -1585,8 +1550,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             make_analysis_dir(obj);
             
             % make raw exvivo folder
-            obj.raw_psd_user =  fullfile(obj.raw_psd_path,...
-                ['raw_psd_user_' obj.channel_struct{obj.channel_No}]); 
+            obj.raw_psd_user =  fullfile(obj.raw_psd_path,'raw_psd_user'); % ['raw_psd_user_' obj.channel_struct{obj.channel_No}]
             mkdir(obj.raw_psd_user);
             
             % get lfp directory
@@ -1624,7 +1588,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 progressbar(i/length(lfp_dir))
             end
             
-            %save psd_object
+            % save psd_object
             psd_object = saveobj(obj);%#ok
             save(fullfile(obj.save_path,'psd_object.mat'),'psd_object');
         end
@@ -1635,16 +1599,16 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             make_analysis_dir(obj)
             
             % get lfp directory
-            lfp_dir = dir(fullfile(obj.lfp_data_path,'*.adibin'));
+            lfp_dir = dir(fullfile(obj.lfp_data_path,['*.' obj.set_array.ext]));
             
             % get winsize
             obj.winsize = round(obj.Fs*obj.dur);
             
             % get index values of frequencies
-            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); %lower boundary
-            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut);%upper boundary
+            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); % lower boundary
+            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut);% upper boundary
             
-            % get epoch in seconds
+            % get epoch in samples
             epoch = obj.period_dur * 60 * obj.Fs;
             
             %initialise progress bar
@@ -1652,55 +1616,56 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % loop through experiments and perform fft analysis
             for ii = 1:length(lfp_dir)
-
+                
                 % get file path
                 Full_path = fullfile(obj.lfp_data_path, lfp_dir(ii).name);
-                               
-                % set data starting point for analysis
-                data_start = 0;
                 
-                %initalise power matrix
+                % set data starting point for analysis
+                data_start = obj.set_array.start_time * epoch;
+                
+                % initalise power matrix
                 power_matrix = [];
                 
-            for i = 1:obj.Nperiods % loop across total number of periods
-                
-                % update data end
-                if i == 1
-                    data_end = data_start + epoch;  
-                else  % get back winsize
-                    data_end = data_start + epoch + obj.winsize/2;
+                for i = obj.start_time:obj.Nperiods % loop across total number of periods
+                    
+                    % update data_end
+                    if i == obj.start_time
+                        data_end = data_start + epoch;
+                    else  % get back winsize
+                        data_end = data_start + epoch + obj.winsize/2;
+                    end
+                    
+                    % map the whole file to memory
+                    m = memmapfile(Full_path,'Format',obj.set_array.file_format);
+                    
+                    % get part of the channel
+                    OutputChannel = double(m.Data(data_start*obj.Tchannels+obj.channel_No : obj.Tchannels ...
+                        : data_end*obj.Tchannels));
+                    
+                    % clear  memmap object
+                    clear m;
+                    
+                    % set correct units to Volts
+                    OutputChannel = OutputChannel/obj.set_array.norm;
+                    
+                    % obtain power matrix
+                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
+                    
+                    % concatenate power matrix
+                    power_matrix  = [power_matrix, power_matrix_single];
+                    
+                    % update data start
+                    data_start = data_start + epoch - obj.winsize/2;
+                    
+                    % update progress bar
+                    progressbar( [], i/(obj.Nperiods-obj.start_time))
                 end
                 
-                % map the whole file to memory
-                m = memmapfile(Full_path,'Format','int16');  
+                % save power matrix
+                save(fullfile(obj.raw_psd_path,erase(lfp_dir(ii).name,['.' obj.set_array.ext])),'power_matrix')
                 
-                %get part of the channel
-                OutputChannel = double(m.Data(data_start*obj.Tchannels+obj.channel_No : obj.Tchannels : data_end*obj.Tchannels));
-                
-                % clear  memmap object
-                clear m;
-                
-                %set correct units to Volts
-                OutputChannel = OutputChannel/320000;
-                
-                % obtain power matrix
-                power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
-                
-                % concatenate power matrix
-                power_matrix  = [power_matrix, power_matrix_single];
-                
-                % update data start 
-                data_start = data_start + epoch - obj.winsize/2;
-                               
                 % update progress bar
-                progressbar( [], i/ (obj.Nperiods))
-            end
-            
-            % save power matrix
-            save(fullfile(obj.raw_psd_path,erase(lfp_dir(ii).name,'.adibin')),'power_matrix')
-            
-             % update progress bar
-             progressbar( ii/length(lfp_dir), [])
+                progressbar( ii/length(lfp_dir), [])
             end
             
             %save psd_object
@@ -1708,17 +1673,18 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
             
         end
+        
         %%% --------------------------------------------------------------- %%%
-         
+        
     end
     
-    methods % B - PSD processing
+    methods % B - PSD pre-processing
         
         % general psd processing program
         function psd_processing(obj)
 
             % make processed psd directory
-            obj.proc_psd_path = fullfile(obj.save_path,['processed_psd_' obj.channel_struct{obj.channel_No}]);
+            obj.proc_psd_path = fullfile(obj.save_path,'processed_psd'); % ['processed_psd_' obj.channel_struct{obj.channel_No}]
             mkdir(obj.proc_psd_path)
            
             % get mat files in load_path directory
@@ -1825,7 +1791,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         % perform computations across all time steps of one power matrix
         % obtain power area, peak freq and peak power vectors (across time)
         function [peak_power, peak_freq, power_area] = obtain_pmatrix_params(obj,power_matrix,freq,Flow,Fhigh)
-            % [peak_power, peak_freq, power_area] = obtain_pmatrix_params(obj,power_matrix,Flow,Fhigh)
+            %%% [peak_power, peak_freq, power_area] = obtain_pmatrix_params(obj,power_matrix,Flow,Fhigh)
             % obtain power spectral density parameters withing desired
             % power matrix and freq should alraedy be trimmed once
             % frequencies Flow to Fhigh in Hz     
@@ -1885,7 +1851,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
 
         end
 
-        % linearise PSD --needs completion!!!
+        % linearise PSD 
         function [p_matrix_out, back_pmat]  = lin_p_matrix(obj,power_matrix)
               % p_matrix_out = remove_noise_pmatrix(obj,power_matrix)
              [W,L] = size(power_matrix);
@@ -1905,6 +1871,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         % get time vector
         function [units,factor,t,x_condition_time] = getcond_realtime(obj,vectorx)
             % [units,factor,t,x_condition_time] = getcond_realtime(obj,feature_aver)
+            
             if obj.bin_size ~= -1
                 t =(0:length(vectorx)-1)*(obj.bin_size/2);
                 [units,factor] = obj.autoscale_x(length(t)*(obj.bin_size/2)*obj.Fs,obj.Fs);
@@ -1916,144 +1883,194 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             x_condition_time = cumsum(obj.condition_time)*dt; %/60; %/60/2
-            x_condition_time(1) = x_condition_time(1) - dt;
+%             x_condition_time(1) = x_condition_time(1) - dt;
+            x_condition_time = x_condition_time - dt;
         end
 
         % Spectrogram - subplot for each experiment
-        function ret_str = spectrogram_subplot(obj,Flow,Fhigh)
+        function spectrogram_subplot(obj,Flow,Fhigh,normlz)
             % spectrogram_plot(obj,Flow,Fhigh)
             % spectrogram subplot within desired frequencies
-            % from Flow to Fhigh
+            % from Flow to Fhigh (in Hz)
+            % normlz: 0 = no normalization, 1 = norm to baseline
             
-            if length(obj.condition_id)~= 1
-                ret_str = 'Only one condition is allowed. Please re enter conditions';
-                return
-            else
-                ret_str = [];
-            end
-             % get mat files in load_path directory
+            % get mat files in load_path directory
             mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+            
             % get exp list
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
             
             % get freq parameters
-            Flow = obj.getfreq(obj.Fs,obj.winsize,Flow); 
-            Fhigh = obj.getfreq(obj.Fs,obj.winsize,Fhigh);
-            
-            freq = eval(obj.freq_cmd);
-            freqx_bound = freq(Flow:Fhigh);
-         
-            Flow = Flow - obj.F1+1; % new low boundary
-            Fhigh = Fhigh - obj.F1+1; % new high boundary
-
-            % create figure
-            figure()
-           
-            
-            % get size for each condition
-            [exps, conds] = size(exp_list);
-            
-     
-               for i = 1 : exps %loop through experiments
-                   
-                   % subplot
-                   subplot(ceil(exps/3),3,i)
-                   
-                   % load file
-                   load(fullfile(obj.proc_psd_path , exp_list{i,1}),'proc_matrix'); %struct = rmfield(struct,'power_matrix')
-                   % z normalise
-%                    proc_matrix = zscore(proc_matrix);
-                   if i == 1
-                       [freq, time_bins] = size(proc_matrix);
-                       % get time vector in seconds
-                       if obj.bin_size~= -1
-                           t =(0:time_bins-1)*(obj.bin_size/2);
-                           [units,factor] = obj.autoscale_x(length(t)*(obj.bin_size/2)*obj.Fs,obj.Fs);
-                           t = t*factor;
-                       else
-                           t =(0:time_bins-1)*(obj.dur/2);
-                           [units,factor] = obj.autoscale_x(length(t)*(obj.dur/2)*obj.Fs,obj.Fs);
-                           t = t*factor;
-                       end
-                   end
-                   
-                   surf(t,freqx_bound,proc_matrix(Flow:Fhigh,:),'EdgeColor','None');
-                   title(erase(strrep(exp_list{i,1},'_',' '),'.mat'))
-                   axis1=gca; obj.prettify_o(axis1); colormap jet;
-                   colorbar;  axis tight; shading interp;
-                   % colormap hsv;% choose coloring scheme
-                   view(0,90)% view(20,50);%make 2d
-                  
-                   
-               end
-               obj.super_labels([],['Time '  '(' units ')'],'Freq. (Hz)')             
-        end
-        
-        % Spectrogram - separate plot for each experiment
-        function ret_str = spectrogram_indplot(obj,Flow,Fhigh)
-            % spectrogram_plot(obj,Flow,Fhigh)
-            % spectrogram subplot within desired frequencies
-            % from Flow to Fhigh
-            
-            if length(obj.condition_id)~= 1
-                ret_str = 'Only one condition is allowed. Please re enter conditions';
-                return
-            else
-                ret_str = [];
-            end
-             % get mat files in load_path directory
-            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
-            % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
-            
-            % get freq parameters
-            Flow = obj.getfreq(obj.Fs,obj.winsize,Flow); 
+            Flow = obj.getfreq(obj.Fs,obj.winsize,Flow);
             Fhigh = obj.getfreq(obj.Fs,obj.winsize,Fhigh);
             
             freq = eval(obj.freq_cmd);
             freqx = freq(Flow:Fhigh);
-         
+            
             Flow = Flow - obj.F1+1; % new low boundary
             Fhigh = Fhigh - obj.F1+1; % new high boundary
-               
+            
+            % create figure
+            figure()
+            
+            
             % get size for each condition
             [exps, conds] = size(exp_list);
             
-     
-               for i = 1 : exps %loop through experiments
-                   % create figure
-                   figure()
-                   
-                   % load file
-                   load(fullfile(obj.proc_psd_path , exp_list{i,1}),'proc_matrix'); %struct = rmfield(struct,'power_matrix')
-                   
-                   % z normalise
-%                    proc_matrix = zscore(proc_matrix);
-                   
-                   if i == 1
-                       [freq, time_bins] = size(proc_matrix);
-                       % get time vector in seconds
-                       if obj.bin_size~= -1
-                           t =(0:time_bins-1)*(obj.bin_size/2);
-                           [units,factor] = obj.autoscale_x(length(t)*(obj.bin_size/2)*obj.Fs,obj.Fs);
-                           t = t*factor;
-                       else
-                           t =(0:time_bins-1)*(obj.dur/2);
-                           [units,factor] = obj.autoscale_x(length(t)*(obj.dur/2)*obj.Fs,obj.Fs);
-                           t = t*factor;
-                       end
-                   end
-                   
-                   surf(t,freqx,proc_matrix(Flow:Fhigh,:),'EdgeColor','None');
-                   title(erase(strrep(exp_list{i,1},'_',' '),'.mat'))
-                   xlabel(['Time' ' (' units ')']); ylabel('Freq (Hz)');
-                   axis1=gca; obj.prettify_o(axis1); colormap jet;
-                   colorbar;  axis tight; shading interp;
-                   view(0,90) % make 2d  % view(20,50);
-                  
-                   
-               end
+            
+            for i = 1:exps % loop through experiments
                 
+                % subplot
+                subplot(ceil(exps/3),3,i)
+                
+                
+                for ii = 1:conds %concatenate conditions to one vector
+                    
+                    % load file
+                    load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                    
+                    if ii == 1
+                        % create concatanated wave
+                        conc_pmat = proc_matrix(Flow:Fhigh,:);
+                        wave_base = mean(proc_matrix(Flow:Fhigh,:));
+                    else
+                        %-% concatanate baseline & drug segments
+                        conc_pmat = horzcat(conc_pmat,proc_matrix(Flow:Fhigh,:));
+                    end
+                    
+                    if ii == conds && normlz == true % normalise
+                        conc_pmat = conc_pmat/mean(wave_base);
+                    end
+                    
+                    % empty psd_prm
+                    psd_prm = [];
+                               
+                    % get time vector
+                    [units,~,t,x_condition_time] = getcond_realtime(obj,mean(conc_pmat));
+                    x_condition_time = [0 x_condition_time];
+                    
+                    % Plot spectrogram
+                    hold on
+                    h = surf(t,freqx,conc_pmat,'EdgeColor','None'); z = get(h,'ZData');
+                    title(erase(strrep(exp_list{i,1},'_',' '),'.mat'));
+%                     xlabel(['Time' ' (' units ')']); ylabel('Freq (Hz)');
+                    axis1=gca; obj.prettify_o(axis1); colormap jet;
+                    colorbar;  axis tight; shading interp;
+                    view(0,90) % make 2d  % view(20,50);
+                    
+                    % get index at which max occurs and plot max freq line
+                    [max_y,idx] = max(conc_pmat);
+                    plot3(t,smooth_v1(freqx(idx),10),max_y,'c')
+                    
+                    % add conditions on plot
+                    for iii = 1: conds
+                        xarrow = [x_condition_time(iii+1) x_condition_time(iii+1)];
+                        yarrow = [min(freqx) max(freqx)];
+                        
+                        % add arrow
+                        plot3(xarrow,yarrow,[max(z(:)) max(z(:))],'color',[1 1 1],'linewidth',2)
+                        
+                        % add text
+                        text((x_condition_time(iii+1)+ x_condition_time(iii))/2,0.9 * max(freqx),max(z(:)),...
+                            strrep(obj.condition_id(iii),'_', ' '),'HorizontalAlignment','center',...
+                            'Color','white','FontSize',14,'FontWeight','bold')
+                    end
+                    
+                
+                end
+            end
+            obj.super_labels([],['Time '  '(' units ')'],'Freq. (Hz)')
+            
+        end
+        
+        % Spectrogram - separate plot for each experiment
+        function spectrogram_indplot(obj,Flow,Fhigh,normlz)
+            % spectrogram_plot(obj,Flow,Fhigh)
+            % spectrogram subplot within desired frequencies
+            % from Flow to Fhigh (in Hz)
+            % normlz: 0 = no normalization, 1 = norm to baseline
+
+            % get mat files in load_path directory
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+            
+            % get exp list
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
+            
+            % remove empty rows
+            exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
+            
+            % get size of condition list
+            [exps, conds] = size(exp_list);
+            
+            % get freq parameters
+            Flow = obj.getfreq(obj.Fs,obj.winsize,Flow);
+            Fhigh = obj.getfreq(obj.Fs,obj.winsize,Fhigh);
+            
+            freq = eval(obj.freq_cmd);
+            freqx = freq(Flow:Fhigh);
+            
+            Flow = Flow - obj.F1+1; % new low boundary
+            Fhigh = Fhigh - obj.F1+1; % new high boundary
+            
+            
+            % loop through experiments
+            for i = 1:exps
+                
+                for ii = 1:conds %concatenate conditions to one vector
+                    
+                    % load file
+                    load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                    
+                    if ii == 1
+                        % create concatanated wave
+                        conc_pmat = proc_matrix(Flow:Fhigh,:);
+                        wave_base = mean(proc_matrix(Flow:Fhigh,:));
+                    else
+                        %-% concatanate baseline & drug segments
+                        conc_pmat = horzcat(conc_pmat,proc_matrix(Flow:Fhigh,:));
+                    end
+                    
+                    if ii == conds && normlz == true % normalise
+                        conc_pmat = conc_pmat/mean(wave_base);
+                    end
+                    
+                    % empty psd_prm
+                    psd_prm = [];
+                end
+                                
+                % get time vector
+                [units,~,t,x_condition_time] = getcond_realtime(obj,mean(conc_pmat));
+                x_condition_time = [0 x_condition_time];
+                
+                % Plot spectrogram
+                figure();hold on
+                h = surf(t,freqx,conc_pmat,'EdgeColor','None'); z = get(h,'ZData');
+                title(erase(strrep(exp_list{i,1},'_',' '),'.mat'));
+                xlabel(['Time' ' (' units ')']); ylabel('Freq (Hz)');
+                axis1=gca; obj.prettify_o(axis1); colormap jet;
+                colorbar;  axis tight; shading interp;
+                view(0,90) % make 2d  % view(20,50);
+                
+                % get index at which max occurs and plot max freq line
+                [max_y,idx] = max(conc_pmat);                
+                plot3(t,smooth_v1(freqx(idx),10),max_y,'c')
+                                
+                % add conditions on plot
+                for iii = 1: conds
+                    xarrow = [x_condition_time(iii+1) x_condition_time(iii+1)];
+                    yarrow = [min(freqx) max(freqx)];
+                    
+                    % add arrow
+                    plot3(xarrow,yarrow,[max(z(:)) max(z(:))],'color',[1 1 1],'linewidth',2)      
+                    
+                    % add text
+                    text((x_condition_time(iii+1)+ x_condition_time(iii))/2,0.9 * max(freqx),max(z(:)),...
+                        strrep(obj.condition_id(iii),'_', ' '),'HorizontalAlignment','center',...
+                        'Color','white','FontSize',14,'FontWeight','bold')
+                end
+ 
+                
+            end
         end
         
         
@@ -2586,8 +2603,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             obj.super_labels([obj.channel_struct{obj.channel_No} ' ' num2str(strct1.band1 ) ' / ' num2str(strct1.band2)  ' Hz'],[],label_y)      
          
         end 
-        
-        
+               
         % Individual PSD parameters vs time
         function psd_prm_time_ind(obj,strct1)
             % param_vs_time(obj,strct1)
@@ -2748,13 +2764,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
 
             % remove rows containg NaNs
-            if conds >1
-                extr_feature = extr_feature(:,all(~isnan(extr_feature)));
-            end
             
             % perform box plot before normalisation
             if plot_type == 3
-                obj.box_plot( extr_feature,obj.condition_id)
+                spectral_analysis_batch.box_plot(extr_feature,obj.condition_id)
             end
             
             if  strct1.norms_v == true %normalise
@@ -2763,12 +2776,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % choose between dot or bar plot
             if plot_type == 1
-                obj.dot_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v...
+                spectral_analysis_batch.dot_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v...
                     ,[0.5 0.5 0.5 ;0 0 0])
             end
             
             if plot_type == 2
-                obj.bar_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v)
+                spectral_analysis_batch.bar_plot(extr_feature,obj.condition_id,strct1.ind_v,strct1.mean_v)
             end
             
             % graph title
@@ -2889,25 +2902,167 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     
     methods % D - Export & Statistics
         
-        % Export excel table mean psd parameters
-        function excel_meanprms(obj,Flow,Fhigh)
-            % excel_meanprms(obj,Flow,Fhigh)
-            % export data in excel format
-            % Flow = 2  low boundary
-            % High = 15 high boundary
+        % missing excluded files
+        
+        % Get matrix with aver PSD parameters vs time
+        function [feature_aver, conds] = psd_prm_matrix(obj,strct1)  
+            % param_vs_time(obj,strct1)
+            % inputs: 1) LFP object , 2) structure with 4 fields
+            % strct1.Flow = 2  low boundary
+            % strct1.Fhigh = 15 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            % strct1.norms_v = true % normalise 
             
-            % create exported folder
-            if exist(obj.export_path,'dir') == 0
-                obj.export_path = fullfile(obj.save_path,'exported');
-                mkdir(obj.export_path)
+            % Outputs
+            % feature aver is a matrix: rows = time bins, columns = 
+            
+            % feature aver  is a matrix = rows(exps) * col(conds)
+            
+            % get mat files in load_path directory
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+                                
+            % get exp list
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
+            
+            % remove empty rows
+%             exp_list(any(cellfun(@isempty, exp_list), 2),:) = []; 
+            
+            % get size of condition list
+            [exps, conds] = size(exp_list);
+            
+            % get freq parameters
+            freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
+            
+            % loop through experiments           
+            for i = 1:exps
+                
+                for ii = 1:conds %concatenate conditions to one vector
+                    if isempty(exp_list{i,ii})==0
+ 
+%                     
+                        % load file
+                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                        
+                        % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
+                        [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)] = obtain_pmatrix_params(obj,proc_matrix,...
+                            freqx,strct1.Flow,strct1.Fhigh);
+                        
+                        if ii == 1
+                            % create concatanated wave
+                            wave_temp = psd_prm(strct1.par_var,:);
+                            wave_base = mean(psd_prm(strct1.par_var,:));
+                        else
+                            %-% concatanate baseline & drug segments
+                            wave_temp = horzcat(wave_temp,psd_prm(strct1.par_var,:));
+                        end
+                        
+                        if ii == conds && strct1.norms_v == true % normalise
+                            wave_temp = wave_temp/wave_base;
+                        end
+                        
+                        % empty psd_prm
+                        psd_prm = [];              
+                    
+                end
+                end
+                
+                % save values to matrix for analysis and plotting
+                if isempty(exp_list{i,ii}) == 0   
+                    feature_aver(:,i) = wave_temp;
+                else
+                    [len,~ ] = size(feature_aver);
+                    feature_aver(:,i) = NaN(len,1);
+                end
+                
             end
+            
+            % remove rows containg NaNs
+%             feature_aver = feature_aver(:,all(~isnan(feature_aver)));        
+     
+        end 
+        
+        % Get matrix with aver PSD parameter ratio vs time
+        function [feature_aver, conds] = prm_prm_ratio_matrix(obj,strct1)  
+            % feature_aver = prm_ratio_time(obj,strct1) 
+            % Plot PSD parameters vs time
+            % strct1.band1 = 5  low boundary
+            % strct1.band2 = 10 high boundary
+            % strct1.band_width = 5 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            % strct1.norms_v = true % normalise 
+            
+            % get mat files in load_path directory
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+                                
+            % get exp list
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);     
+            
+            % remove empty rows
+            exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
+                     
+            % get size of condition list
+            [exps, conds] = size(exp_list);
+            
+            % get freq parameters
+            freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
+            
+            % loop through experiments           
+            for i = 1:exps
+                
+                for ii = 1:conds %concatenate conditions to one vector
+%                     if isempty(exp_list{i,ii})==1
+%                         continue
+%                     end
+                        % load file
+                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                        
+                        % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
+                        
+                        % Band 1
+                        [psd_prmA{1}, psd_prmA{2}, psd_prmA{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
+                            strct1.band1 - strct1.band_width,strct1.band1 + strct1.band_width);
+                        % Band 2
+                        [psd_prmB{1}, psd_prmB{2}, psd_prmB{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
+                            strct1.band2 - strct1.band_width,strct1.band2 + strct1.band_width);
+                        
+                        % get ratio
+                        psd_prm1 = cell2mat(psd_prmA(strct1.par_var));
+                        psd_prm2 = cell2mat(psd_prmB(strct1.par_var));
+                        psd_prm = psd_prm1./ psd_prm2;
+                        
+                        if ii == 1
+                            % create concatanated wave
+                            wave_temp = psd_prm;
+                            wave_base = mean(psd_prm);
+                        else
+                            %-% concatanate baseline & drug segments                        
+                            wave_temp = horzcat(wave_temp,psd_prm);
+                        end
+                        
+                        if ii == conds && strct1.norms_v == true % normalise
+                            wave_temp = wave_temp/wave_base;
+                        end
+                        
+                        % empty psd_prm
+                        psd_prm = [];
+                    
+                end
 
-            
-            % get parameters
-            psd_prms = {'Peak_Power';'Peak_Freq';'Power_Area'};
-            
-            % get spreadsheet file name
-            xcl_file = [obj.channel_struct{obj.channel_No} '_' num2str(Flow) '_' num2str(Fhigh) ' Hz'];
+                    feature_aver(:,i) = wave_temp;           
+            end
+            feature_aver = feature_aver(:,all(~isnan(feature_aver)));
+           
+        end         
+        
+        % Aver PSD parameter
+        function [extr_feature,conds] = aver_psd_prm_matrix(obj,strct1)
+            % extr_feature = aver_psd_prm_matrix(obj,strct1)
+            % Plot aver psd parameters
+            % strct1.Flow = 2  low boundary
+            % strct1.High = 15 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            % strct1.norms_v = true % normalise
+            % strct1.removeNans = 0 % do not remove Nans
             
             % get matlab directory for processed psds
             mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
@@ -2916,8 +3071,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
             
             % get freq parameters
-            Flow = obj.getfreq(obj.Fs,obj.winsize,Flow);
-            Fhigh = obj.getfreq(obj.Fs,obj.winsize,Fhigh);
+            Flow = obj.getfreq(obj.Fs,obj.winsize,strct1.Flow);
+            Fhigh = obj.getfreq(obj.Fs,obj.winsize,strct1.Fhigh);
             freq = eval(obj.freq_cmd); freqx = freq(Flow:Fhigh);
             Flow = Flow - obj.F1+1; % new low boundary
             Fhigh = Fhigh - obj.F1+1; % new high boundary
@@ -2926,10 +3081,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             [exps, conds] = size(exp_list);
             
             % preallocate vector
-            extr_features = zeros(exps,conds*length(psd_prms));
+            extr_feature = zeros(conds,exps);
             
             for i = 1 : exps %loop through experiments
-                cntr=1;
+                
                 for ii = 1:conds %loop through conditions
                     
                     if isempty(exp_list{i,ii})==0 % check if file is present
@@ -2942,53 +3097,311 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         % get parameters from each experiment
                         [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd,freqx);
                         
-                        extr_features(i,cntr:cntr-1+length(psd_prms)) = psd_prm;
+                        extr_feature(ii,i) = psd_prm(strct1.par_var);
                     else
-                        extr_features(i,cntr:cntr-1+length(psd_prms)) = NaN;
+                        extr_feature(ii,i) = NaN;
                     end
                     
-                    % update counter
-                    cntr = cntr + length(psd_prms);
                 end
                 
             end
-            
-            %%% Transform data to create an excel table %%%
-            
-            % convert matrix 2 cell
-            extr_features = num2cell(extr_features);
-            
-            % create empty table name vector
-            table_names =['Exp_ID', psd_prms'];
-            exp_id = {};
-            table_features = {};
-            cntr = 1;
-            for i = 1: conds
-                % get table names
-                exp_id = [exp_id; ['Exp_Names_' obj.condition_id{i}]];
-                exp_id = [exp_id; exp_list(:,i)];
-                exp_id = [exp_id; cell(1,1)];
-                
-                % get table features
-                table_features = [table_features; cell(1,length(psd_prms))];
-                table_features = [table_features; extr_features(:,cntr:cntr-1+length(psd_prms))];
-                table_features = [table_features; cell(1,length(psd_prms))];
-                
-                % update counter
-                cntr = cntr + length(psd_prms);
+
+            % remove rows containg NaNs
+            if conds >1 && strct1.removeNans == 1
+                extr_feature = extr_feature(:,all(~isnan(extr_feature)));
             end
             
-            % create array for table storage
-            tablearray = [exp_id table_features];
-             
-            % create table
-            T = cell2table(tablearray ,'VariableNames',table_names);
+            if  strct1.norms_v == true %normalise
+                extr_feature = extr_feature./extr_feature(1,:);
+            end
             
-            % save table to excel file
-            writetable(T,fullfile(obj.export_path, xcl_file),'FileType','spreadsheet','Sheet',1)
+
         end
         
-        % Aver PSD parameter
+        % Aver PSD parameter ratio
+        function [extr_feature,conds] = aver_psd_prm_matrix_ratio(obj,strct1)
+            % extr_feature = aver_psd_prm_matrix_ratio(obj,strct1)
+            % Plot average PSD parameters
+            % strct1.band1 = 5  low boundary
+            % strct1.band2 = 10 high boundary
+            % strct1.band_width = 5 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            % strct1.norms_v = true % normalise 
+            % strct1.ind_v = true % plot individual experiments
+            % strct1.mean_v = true % plot mean
+            
+            % get matlab directory for processed psds
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+            
+            % get exp list
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
+            
+            % get freq parameters
+            f_range(1) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 - strct1.band_width) - obj.F1+1;
+            f_range(2) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 + strct1.band_width) - obj.F1+1;
+            f_range(3) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 - strct1.band_width) - obj.F1+1;
+            f_range(4) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 + strct1.band_width) - obj.F1+1;
+            
+            % get frequency vector
+            freq = eval(obj.freq_cmd); freq = freq(obj.F1:end);
+            
+            % get size for each condition
+            [exps, conds] = size(exp_list);
+            
+            % preallocate vector
+            extr_feature = zeros(conds,exps);
+            for i = 1 : exps %loop through experiments
+                
+                for ii = 1:conds %loop through conditions
+                    
+                    if isempty(exp_list{i,ii})==0 % check if file is present
+                        % load file
+                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                        
+                        % get parameters from each experiment
+                        [psd_prmA(1),psd_prmA(2),psd_prmA(3)] = obj.psd_parameters(mean(proc_matrix(f_range(1):f_range(2),:),2)...
+                            ,freq(f_range(1):f_range(2)));
+                        [psd_prmB(1),psd_prmB(2),psd_prmB(3)] = obj.psd_parameters(mean(proc_matrix(f_range(3):f_range(4),:)...
+                            ,2),freq(f_range(3):f_range(4)));
+                        
+                        extr_feature(ii,i) = psd_prmA(strct1.par_var)/psd_prmB(strct1.par_var);
+                    else
+                        extr_feature(ii,i) = NaN;
+                    end
+                end
+            end
+        
+        end
+        
+        
+        % need to add ratios to the APP!!!!!!! 
+        % Export mean psd parameters to excel table
+        function excel_meanprms(obj,strct1,ratio)
+            % excel_meanprms(obj,strct1)
+            % export data in excel format
+            % strct1.Flow = 2  low boundary
+            % strct1.Fhigh = 15 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            % strct1.norms_v = true % normalise 
+            
+            % create exported folder
+            if exist(obj.export_path,'dir') == 0
+                obj.export_path = fullfile(obj.save_path,'exported');
+                mkdir(obj.export_path)
+            end
+            
+            % get parameters
+            param_array = {'peak_power';'peak_freq';'power_area'};
+            param_units =  {' (V^2/Hz)'; ' (Hz)'; ' (V^2)'};
+                        
+            % get matlab directory for processed psds
+            mat_dir = dir(fullfile(obj.lfp_data_path,'*.mat'));
+            
+            % get sorted list
+            exp_list = spectral_analysis_batch.sort_rawLFP_list(mat_dir);
+            exp_list = erase(exp_list,'.mat');
+            
+            % get matrix with psd properties
+            for i = 1:3
+                strct1.par_var = i; 
+                if ratio == 0
+                    [mat_psd_var,conds] = aver_psd_prm_matrix(obj,strct1); %#ok
+                else
+                    [mat_psd_var,~] = aver_psd_prm_matrix_ratio(obj,strct1);%#ok
+                end
+                eval([param_array{i} ' = transpose(mat_psd_var);'])
+            end           
+            
+            % convert matrix to cell
+            extr_features = num2cell([ peak_power NaN(length(exp_list),1) peak_freq NaN(length(exp_list),1) power_area]);
+            
+            % add exp id
+            table_array = [exp_list extr_features];
+
+            % create empty table name vector
+            [~,W] = size(table_array);
+            
+            % add table names
+            table_names = cell(1,W); table_names{1} = 'Exp_ID'; 
+            prm_names = cell(1,W);
+            
+            % add conditions and variable names         
+            for i = 1 : conds
+                if i == 1
+                    k = 2;
+                    table_names(k:k+2) = obj.condition_id;
+                    prm_names{k+1} = [strrep(param_array{i},'_',' ') param_units{i}];
+                else                    
+                    k = k + 4;
+                    table_names(k:k+2) = obj.condition_id;
+                    prm_names{k+1} = [strrep(param_array{i},'_',' ') param_units{i}];
+                end
+            end
+            
+            % merge main array with column names
+            merged_array = [table_names; prm_names; table_array];
+            
+            % get spreadsheet file name
+            file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_aver'];
+            
+            % save table to excel file
+            xlswrite(fullfile(obj.export_path, file_name),merged_array);
+
+        end
+        
+        % Export psd parameters vs time to excel table
+        function excel_psd_time(obj,strct1,ratio)
+            % excel_psd_time(obj,strct1)
+            % export data in excel format
+            % strct1.Flow = 2  low boundary
+            % strct1.Fhigh = 15 high boundary
+            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
+            
+            % create exported folder
+            if exist(obj.export_path,'dir') == 0
+                obj.export_path = fullfile(obj.save_path,'exported');
+                mkdir(obj.export_path)
+            end
+            
+            % get spreadsheet file name
+            file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_time'];
+            
+            % array with parameters
+            param_array = {'peak_power','peak_freq','power_area'};
+            
+            % get matlab directory for processed psds
+            mat_dir = dir(fullfile(obj.lfp_data_path,'*.mat'));
+            
+            % get sorted list
+            exp_list = spectral_analysis_batch.sort_rawLFP_list(mat_dir);
+            exp_list = erase(exp_list,'.mat');
+
+            % get matrix with psd properties
+            for i = 1:3
+                strct1.par_var = i;
+                if ratio ==0
+                    [mat_psd_var,conds] = psd_prm_matrix(obj,strct1);
+                else
+                    [mat_psd_var,conds] = prm_prm_ratio_matrix(obj,strct1);
+                end
+                
+                % get times for each condition
+                [time_units,~,t,x_condition_time] = getcond_realtime(obj,mat_psd_var);
+                
+                % get index in samples
+                idx =[];
+                
+                for ii = 1:conds
+                    idx = [idx find(t==x_condition_time(ii))];
+                end
+                
+                % convert psd parameter matrix to cell array
+                temp_array = num2cell(mat_psd_var);
+                % add time
+                temp_array = [num2cell(t') temp_array];
+                
+                array_names = [{['time (' time_units ')']} exp_list'];
+                merged_array = [array_names; temp_array];
+                
+                xlswrite(fullfile(obj.export_path, file_name),merged_array,i);
+                    
+            end
+                 
+            
+                    
+            % Rename excel sheets    
+%             e = actxserver('Excel.Application'); % # open Activex server
+%             ewb = e.Workbooks.Open(fullfile(obj.export_path, file_name)); % # open file (enter full path!)
+%             for i = 1 : conds
+%                 ewb.Worksheets.Item(i).Name = param_array{i}; % # rename 1st sheet
+%                 ewb.Save % # save to the same file
+%             end                        
+%             ewb.Close(false)
+%             e.Quit
+        end
+        
+        % Export mean psd parameters vs time to .mat file
+        function psd_to_mat_time(obj,strct1,ratio)
+            % psd_to_mat_time(obj,strct1)
+            
+            % create exported folder
+            if exist(obj.export_path,'dir') == 0
+                obj.export_path = fullfile(obj.save_path,'exported');
+                mkdir(obj.export_path)
+            end
+            
+            param_array = {'peak_power','peak_freq','power_area'};
+            
+            % get matrix with psd properties
+            for i = 1:3
+                strct1.par_var = i;
+                if ratio ==0
+                    [mat_psd_var,conds] = psd_prm_matrix(obj,strct1);
+                else
+                    [mat_psd_var,conds] = prm_prm_ratio_matrix(obj,strct1);
+                end
+                eval([param_array{i} ' = transpose(mat_psd_var);'])
+            end
+            
+            % get times for each condition
+            [time_units,~,t,x_condition_time] = getcond_realtime(obj,mat_psd_var);
+            
+            % get index in samples
+            index_samples =[];
+            
+            for i = 1:conds
+             index_samples = [index_samples find(t==x_condition_time(i))];
+            end
+                        
+            % change to appropriate names
+            index_time = x_condition_time;  conditions = obj.condition_id; time = t;           
+                       
+            % create appropriate file name
+            file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_time'];
+            
+            % save .mat file
+            save(fullfile(obj.export_path,file_name),'peak_power','peak_freq','power_area','index_samples','index_time'...
+                ,'time','time_units','conditions');        
+        end
+        
+        % Export mean psd parameters to .mat file
+        function psd_to_mat_aver(obj,strct1,ratio)
+            % psd_to_mat_aver(obj,strct1)
+            
+            % create exported folder
+            if exist(obj.export_path,'dir') == 0
+                obj.export_path = fullfile(obj.save_path,'exported');
+                mkdir(obj.export_path)
+            end
+            
+            % get matrix with psd properties
+            param_array = {'peak_power','peak_freq','power_area'};
+            
+            % get matrix with psd properties
+            for i = 1:3
+                strct1.par_var = i; 
+                if ratio == 0
+                    [mat_psd_var,~] = aver_psd_prm_matrix(obj,strct1); %#ok
+                else
+                    [mat_psd_var,~] = aver_psd_prm_matrix_ratio(obj,strct1);%#ok
+                end
+                eval([param_array{i} ' = transpose(mat_psd_var);'])
+            end           
+            
+            % give appropriate names to saved arrays
+            conditions = obj.condition_id;
+            
+            % get file name
+            file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_aver'];
+                  
+            % save .mat file
+            save(fullfile(obj.export_path,file_name),'peak_power','peak_freq','power_area','conditions');            
+        end
+        
+        
+        
+        
+        % matlab stats
         function psd_prm_stat(obj,strct1)
             % psd_prm_stat(obj,strct1)
             % Plot aver psd parameters
@@ -2998,7 +3411,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % strct1.norms_v = true % normalise
             % strct1.ind_v = true % plot individual experiments
             % strct1.mean_v = true % plot mean
-            
+                        
             % get matlab directory for processed psds
             mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
             
@@ -3077,271 +3490,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     end
     
     methods % E - Comparative Plots and statistics
-        
-        % get matrix with aver PSD parameters vs time
-        function [feature_aver, conds] = psd_prm_matrix(obj,strct1)  
-            % param_vs_time(obj,strct1)
-            % Plot PSD parameters vs time
-            % strct1.Flow = 2  low boundary
-            % strct1.Fhigh = 15 high boundary
-            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
-            % strct1.norms_v = true % normalise 
             
-            % get mat files in load_path directory
-            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
-                                
-            % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
-            
-            % remove empty rows
-            exp_list(any(cellfun(@isempty, exp_list), 2),:) = []; 
-            
-            % get size of condition list
-            [exps, conds] = size(exp_list);
-            
-            % get freq parameters
-            freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
-            
-            % loop through experiments           
-            for i = 1:exps
-                
-                for ii = 1:conds %concatenate conditions to one vector
-%                     if isempty(exp_list{i,ii})==1
-%                         break
-%                     end
-                    
-                        % load file
-                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
-                        
-                        % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
-                        [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)] = obtain_pmatrix_params(obj,proc_matrix,...
-                            freqx,strct1.Flow,strct1.Fhigh);
-                        
-                        if ii == 1
-                            % create concatanated wave
-                            wave_temp = psd_prm(strct1.par_var,:);
-                            wave_base = mean(psd_prm(strct1.par_var,:));
-                        else
-                            %-% concatanate baseline & drug segments
-                            wave_temp = horzcat(wave_temp,psd_prm(strct1.par_var,:));
-                        end
-                        
-                        if ii == conds && strct1.norms_v == true % normalise
-                            wave_temp = wave_temp/wave_base;
-                        end
-                        
-                        % empty psd_prm
-                        psd_prm = [];              
-                    
-                end
-                
-                % save values to matrix for analysis and plotting
-%                 if isempty(exp_list{i,ii}) == 0   
-                    feature_aver(:,i) = wave_temp;
-%                 else
-%                     [len,~ ] = size(feature_aver);
-%                     feature_aver(:,i) = NaN(len,1);
-%                 end
-                
-            end
-            
-            % remove rows containg NaNs
-            feature_aver = feature_aver(:,all(~isnan(feature_aver)));        
-     
-        end 
-        
-        % get matrix with aver PSD parameter ratio vs time
-        function [feature_aver, conds] = prm_prm_ratio_matrix(obj,strct1)  
-            % feature_aver = prm_ratio_time(obj,strct1) 
-            % Plot PSD parameters vs time
-            % strct1.band1 = 5  low boundary
-            % strct1.band2 = 10 high boundary
-            % strct1.band_width = 5 high boundary
-            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
-            % strct1.norms_v = true % normalise 
-            
-            % get mat files in load_path directory
-            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
-                                
-            % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);     
-            
-            % remove empty rows
-            exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
-                     
-            % get size of condition list
-            [exps, conds] = size(exp_list);
-            
-            % get freq parameters
-            freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
-            
-            % loop through experiments           
-            for i = 1:exps
-                
-                for ii = 1:conds %concatenate conditions to one vector
-%                     if isempty(exp_list{i,ii})==1
-%                         continue
-%                     end
-                        % load file
-                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
-                        
-                        % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
-                        
-                        % Band 1
-                        [psd_prmA{1}, psd_prmA{2}, psd_prmA{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
-                            strct1.band1 - strct1.band_width,strct1.band1 + strct1.band_width);
-                        % Band 2
-                        [psd_prmB{1}, psd_prmB{2}, psd_prmB{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
-                            strct1.band2 - strct1.band_width,strct1.band2 + strct1.band_width);
-                        
-                        % get ratio
-                        psd_prm1 = cell2mat(psd_prmA(strct1.par_var));
-                        psd_prm2 = cell2mat(psd_prmB(strct1.par_var));
-                        psd_prm = psd_prm1./ psd_prm2;
-                        
-                        if ii == 1
-                            % create concatanated wave
-                            wave_temp = psd_prm;
-                            wave_base = mean(psd_prm);
-                        else
-                            %-% concatanate baseline & drug segments                        
-                            wave_temp = horzcat(wave_temp,psd_prm);
-                        end
-                        
-                        if ii == conds && strct1.norms_v == true % normalise
-                            wave_temp = wave_temp/wave_base;
-                        end
-                        
-                        % empty psd_prm
-                        psd_prm = [];
-                    
-                end
-
-                    feature_aver(:,i) = wave_temp;           
-            end
-            feature_aver = feature_aver(:,all(~isnan(feature_aver)));
-           
-        end 
-        
-        % Aver PSD parameter
-        function extr_feature = aver_psd_prm_matrix(obj,strct1)
-            % extr_feature = aver_psd_prm_matrix(obj,strct1)
-            % Plot aver psd parameters
-            % strct1.Flow = 2  low boundary
-            % strct1.High = 15 high boundary
-            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
-            % strct1.norms_v = true % normalise
-            
-            % get matlab directory for processed psds
-            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
-            
-            % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
-            
-            % get freq parameters
-            Flow = obj.getfreq(obj.Fs,obj.winsize,strct1.Flow);
-            Fhigh = obj.getfreq(obj.Fs,obj.winsize,strct1.Fhigh);
-            freq = eval(obj.freq_cmd); freqx = freq(Flow:Fhigh);
-            Flow = Flow - obj.F1+1; % new low boundary
-            Fhigh = Fhigh - obj.F1+1; % new high boundary
-            
-            % get size for each condition
-            [exps, conds] = size(exp_list);
-            
-            % preallocate vector
-            extr_feature = zeros(conds,exps);
-            for i = 1 : exps %loop through experiments
-                
-                for ii = 1:conds %loop through conditions
-                    
-                    if isempty(exp_list{i,ii})==0 % check if file is present
-                        % load file
-                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix'); %struct = rmfield(struct,'power_matrix')
-                        
-                        % get mean and sem
-                        mean_psd = mean(proc_matrix(Flow:Fhigh,:),2);
-                        
-                        % get parameters from each experiment
-                        [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd,freqx);
-                        
-                        extr_feature(ii,i) = psd_prm(strct1.par_var);
-                    else
-                        extr_feature(ii,i) = NaN;
-                    end
-                    
-                end
-                
-            end
-
-            % remove rows containg NaNs
-            if conds >1
-                extr_feature = extr_feature(:,all(~isnan(extr_feature)));
-            end
-            
-            if  strct1.norms_v == true %normalise
-                extr_feature = extr_feature./extr_feature(1,:);
-            end
-            
-
-        end
-        
-        % Aver PSD parameter ratio
-        function extr_feature = aver_psd_prm_matrix_ratio(obj,strct1)
-            % extr_feature = aver_psd_prm_matrix_ratio(obj,strct1)
-            % Plot average PSD parameters
-            % strct1.band1 = 5  low boundary
-            % strct1.band2 = 10 high boundary
-            % strct1.band_width = 5 high boundary
-            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
-            % strct1.norms_v = true % normalise 
-            % strct1.ind_v = true % plot individual experiments
-            % strct1.mean_v = true % plot mean
-            
-            % get matlab directory for processed psds
-            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
-            
-            % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
-            
-            % get freq parameters
-            f_range(1) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 - strct1.band_width) - obj.F1+1;
-            f_range(2) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 + strct1.band_width) - obj.F1+1;
-            f_range(3) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 - strct1.band_width) - obj.F1+1;
-            f_range(4) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 + strct1.band_width) - obj.F1+1;
-            
-            % get frequency vector
-            freq = eval(obj.freq_cmd); freq = freq(obj.F1:end);
-            
-            % get size for each condition
-            [exps, conds] = size(exp_list);
-            
-            % preallocate vector
-            extr_feature = zeros(conds,exps);
-            for i = 1 : exps %loop through experiments
-                
-                for ii = 1:conds %loop through conditions
-                    
-                    if isempty(exp_list{i,ii})==0 % check if file is present
-                        % load file
-                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
-                        
-                        % get parameters from each experiment
-                        [psd_prmA(1),psd_prmA(2),psd_prmA(3)] = obj.psd_parameters(mean(proc_matrix(f_range(1):f_range(2),:),2)...
-                            ,freq(f_range(1):f_range(2)));
-                        [psd_prmB(1),psd_prmB(2),psd_prmB(3)] = obj.psd_parameters(mean(proc_matrix(f_range(3):f_range(4),:)...
-                            ,2),freq(f_range(3):f_range(4)));
-                        
-                        extr_feature(ii,i) = psd_prmA(strct1.par_var)/psd_prmB(strct1.par_var);
-                    else
-                        extr_feature(ii,i) = NaN;
-                    end
-                end
-            end
-        
-    end
-        
         % Plot between conditions (time)
         function cmp_psd_prm_time(obj,strct1,folder_list,ratio)
+            % cmp_psd_prm_time(obj,strct1,folder_list,ratio)
+            
             if ratio == false
                 % get title string
                 ttl_string = [num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
@@ -3378,22 +3531,26 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     [feature_aver, conds] = prm_prm_ratio_matrix(psd_object,strct1);
                 end
 
-                [col_face,col_edge] = spectral_analysis_batch.color_vec2(i);
+                [col_face,col_edge,col_light] = spectral_analysis_batch.color_vec2(i);
                 
                 subplot(length(folder_list),1,i)
-                mean_wave = mean(feature_aver,2);
-                
+%                 mean_wave = mean(feature_aver,2);
+              
                 % get time
                 [units,~,t,x_condition_time] = getcond_realtime(psd_object,feature_aver);
                 
+                % get mean and sem as filled
+                [mean_wave, xfill,yfill] = obj.getmatrix_mean(feature_aver,t);
+                
                 k = strfind(psd_object.save_path,'\');
-                
+                hold on;
+                % shaded region with SEM
+                fill(xfill,yfill,col_light,'LineStyle','none')
                 h(1) =  plot(t,mean_wave,'o','Color',col_edge,'MarkerEdgeColor',col_edge,'MarkerFaceColor',col_face,...
-                    'MarkerSize',5,'DisplayName',strrep(psd_object.save_path(k(end-1)+1:k(end)-1),'_',' '));
+                    'MarkerSize',4,'DisplayName',strrep(psd_object.save_path(k(end-1)+1:k(end)-1),'_',' '));
                 
-                hold on;plot(t,smooth_v1(mean_wave,15),'Color',col_edge,'LineWidth',4)
-                
-                
+%                 plot(t,smooth_v1(mean_wave,15),'Color',col_edge,'LineWidth',2)
+                             
                 % set x label
                 xlabel(['Time (' units ')'])
                 
@@ -3413,7 +3570,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         strrep(psd_object.condition_id{iii+1},'_',' '),'FontSize',14,'FontWeight','bold')
                 end
                 % add legend
-%                 legend(h(1))
+                % legend(h(1))
 
             end
 
@@ -3421,8 +3578,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % Plot between conditions (average)
         function [bar_vector,pval] = cmp_psd_prm_aver(obj,strct1,folder_list,ratio)
+            % [bar_vector,pval] = cmp_psd_prm_aver(obj,strct1,folder_list,ratio)
+            
+            % remove all rows with even 1 condition empty
+            strct1.removeNans = 1;
+            
             % parameter difference
-            par_vec = [1,2];
+            par_vec = [2,3];
+            
              % choose label
              switch strct1.par_var
                  case 1
@@ -3464,7 +3627,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                  [~, pval(i)] = ttest(extr_feature(par_vec(2),:),extr_feature(par_vec(1),:));
                  bar_face_col(i,:) = col_face;
                  bar_edge_col(i,:) = col_edge;
-                 bar_labels{i} = psd_object.condition_id{length(par_vec(1))};
+                 bar_labels{i} = psd_object.condition_id{par_vec(2)};
                  
              end
             
@@ -3499,132 +3662,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
              obj.prettify_o(gca)
          end
        
-    end
-    
-    methods % F - Correlation
-        % EMG correlation
-        function ret_str = corr_psd_prm_emg(obj,strct1,emg_path)
-            % ret_str = corr_psd_prm_emg(obj,strct1,emg_path)
-            % Plot PSD parameters vs time
-            % strct1.Flow = 2  low boundary
-            % strct1.Fhigh = 15 high boundary
-            % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
-            % strct1.norms_v = true % normalise
-            % strct1.ind_v = true % plot individual experiments
-            % strct1.mean_v = true % plot mean
-            
-            if length(obj.condition_id)~= 1
-                ret_str = 'Only one condition is allowed. Please re enter conditions';
-                return
-            else
-                ret_str = [];
-            end
-          
-            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
-            emg_dir = dir(fullfile(emg_path,'*.mat'));
-            
-            % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
-            emg_list = obj.get_exp_array(emg_dir,obj.condition_id);
-            
-            % get size of condition list
-            [exps, conds] = size(exp_list);
-            
-            % get freq parameters
-            freq = eval(obj.freq_cmd); freqx = (freq(obj.F1:obj.F2));
-            
-            
-            f2 = figure();hold on;
-            % loop through experiments
-            for i = 1:exps
-                if isempty(exp_list{i})==0
-                    % load file
-                    load(fullfile(obj.proc_psd_path , exp_list{i}),'proc_matrix');
-                    
-                    % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
-                    [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)] = obtain_pmatrix_params(obj,proc_matrix,...
-                        freqx,strct1.Flow,strct1.Fhigh);
-                    
-                    % get desired parameter
-                    wave_temp = psd_prm(strct1.par_var,:);
-                    
-                    % empty psd_prm
-                    psd_prm = [];       
-                end
-  
-                % get time
-                [units,~,t,x_condition_time] = getcond_realtime(obj,wave_temp);
-                
-                % get title string
-                ttl_string = [obj.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
-                
-                % create figure
-                f = figure();legend;
-                title(ttl_string)
-                set(0,'CurrentFigure',f);
-                subplot(2,1,1)
-                plot(t,wave_temp,'k','Linewidth',1,'DisplayName',...
-                    erase(strrep(exp_list{i},'_',' '),'.mat'));hold on;
-                
-                % add arrow
-                for iii = 1: conds-1
-                    xarrow = [x_condition_time(iii) x_condition_time(iii)];
-                    yarrow = [median(wave_temp)*1.2 median(wave_temp)*2];
-                    plot(xarrow,yarrow,'r','linewidth',2)
-                end
-                
-                % choose label
-                switch strct1.par_var
-                    case 1
-                        label_y = 'Peak Power (V^2 Hz^{-1})';
-                    case 2
-                        label_y = 'Peak Freq. (Hz)';
-                    case 3
-                        label_y = 'Power Area (V^2)';
-                end
-                    
-                % format graph
-                obj.prettify_o(gca)
-                ylabel(label_y)
-                title([strrep(erase(exp_list{i},'.mat'),'_',' ') ' ' obj.channel_struct{obj.channel_No} ...
-                    ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'])
-                
-%                 % set limits
-%                 xlim([t(1) - t(end)/20, t(end)+ t(end)/20])
-%                 ylim([min(wave_temp)- mean(wave_temp)/20, max(wave_temp)+ mean(wave_temp)/20 ])
-                
-                % plot emg
-                load(fullfile(emg_path, emg_list{i}),'emg_signal');
-                if obj.bin_size ~= -1
-                    emg_signal = obj.merge_bins_signal(obj.bin_size,obj.dur,emg_signal);
-                end
-                
-                % get current figure
-                set(0,'CurrentFigure',f);
-                subplot(2,1,2)
-                
-                % add plot
-                plot(t,emg_signal,'k')
-                % set y,x label,title and format
-                title('EMG')
-                ylabel ('R.M.S')   
-                xlabel(['Time (' units ')'])  
-                obj.prettify_o(gca)
-                
-                % create correlation plot
-                set(0,'CurrentFigure',f2);
-                subplot(ceil(exps/3),3,i)
-                corr_plot(emg_signal,wave_temp,'Spearman');
-                ylabel (label_y)   
-                xlabel('EMG - r.m.s')  
-                
-            end
-            % bring correlation figure to front
-           figure(f2); 
-        end
-        
-        
-    end
-    
+    end 
     
 end
