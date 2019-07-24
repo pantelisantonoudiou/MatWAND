@@ -6,6 +6,7 @@ MatWand Consists of:
 a) one main class --> Spectral_Analysis_batch.m
 
 b) helper sciprts -->
+
                       inputmod.m - Author : The MathWorks, Inc.
 
                       inputsdlg.m - Author: Kesh Ikuma
