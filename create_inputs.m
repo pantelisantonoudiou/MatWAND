@@ -1,4 +1,9 @@
 classdef create_inputs < matlab.mixin.Copyable
+    % simulate sinusoidal inputs
+    % x = create_inputs;
+    % ENTER PATH
+    % x.gen_path = 'C:\Users\panton01\Desktop\INvivo_data\unit_test';
+    % batch_wave(x,'cond1',40,1)
     
     properties
         Fs = 1000; % sampling rate      
@@ -49,8 +54,13 @@ classdef create_inputs < matlab.mixin.Copyable
             
         end
         
-        % save batch waves
+        % create and save simulated waves waves
         function batch_wave(obj,cond_name,freq,amp)
+            % batch_wave(obj,cond_name,freq,amp)
+            % inputs
+            % cond_name  = string containing condition name
+            % freq = int/float defining the wave frequency
+            % amp = int/float defining the wave amplitude
                     
             % create analysis folder
             obj.save_path = fullfile(obj.gen_path, 'raw_data');
