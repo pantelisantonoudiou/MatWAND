@@ -58,7 +58,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     %     a.mean_v = true
     
     
-    %%% class parameters %%%
+    %%% Class parameters %%%
     properties
         
         % User input from application or
@@ -209,6 +209,25 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 progressbar(i/length(lfp_dir))
                 
             end
+        end
+        
+        % band pass filter signal
+        function filtered_signal = BandPassFilter(original_signal,Fs,Flow,Fhigh)
+            % filtered_signal = short_lfp.BandPassFilter(original_signal,Fs,Flow,Fhigh)
+            % Sampling Frequency (Hz)
+            
+            Fn = Fs/2;                                                  % Nyquist Frequency (Hz)
+            Wp = [Flow   Fhigh]/Fn;                                     % Passband Frequency (Normalised)
+            Ws = [(Flow-0.5)   (Fhigh+0.5)]/Fn;                         % Stopband Frequency (Normalised)
+            Rp = 1;                                                     % Passband Ripple (dB)
+            Rs = 75;                                                    % Stopband Ripple (dB)
+            [n,Ws] = cheb2ord(Wp,Ws,Rp,Rs);                             % Filter Order
+            [z,p,k] = cheby2(n,Rs,Ws);                                  % Filter Design
+            [sosbp,gbp] = zp2sos(z,p,k);                                % Convert To Second-Order-Section For Stability
+            
+            
+            filtered_signal = filtfilt(sosbp, gbp, original_signal);
+            
         end
         
     end
@@ -437,17 +456,17 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % initialise counter
             Cntr = 1;
             for i=1:overlap:Channel_length -(overlap) %loop through signal segments with overlap
-                %%get segment
+                % get segment
                 signal = input_wave(i:i+winsize-1);
                 
-                %%multiply the fft by hanning window
+                % multiply the fft by hanning window
                 signal = signal.*winvec;
                 
-                %%get normalised power spectral density
+                % get normalised power spectral density
                 xdft = (abs(fft(signal)).^2);
                 xdft = 2*xdft*(1/(Fs*length(signal)));
                 
-                %%2 .* to conserve energy across
+                % 2 .* to conserve energy across
                 psdx = xdft((1:length(xdft)/2+1));
                 
                 % save power spectral density over time
@@ -477,12 +496,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % noise removal
-        function psd_out = remove_noise_psd(psd,Fs,winsize,noise_freq,width_f)
+        function psd_out = remove_noise_psd(psd,Fs,winsize,noise_freq,width_f,F1)
             %psd_noise_remove(band_freq,width_f,psd)
             
             % removing boise boundaries
-            Fnoisemin = spectral_analysis_batch.getfreq(Fs,winsize,noise_freq - width_f); %Fnoisemin= Fnoisemin+1-F1;
-            Fnoisemax = spectral_analysis_batch.getfreq(Fs,winsize,noise_freq + width_f); %Fnoisemax= Fnoisemax+1-F1;
+            Fnoisemin = spectral_analysis_batch.getfreq(Fs,winsize,noise_freq - width_f); 
+            Fnoisemin= Fnoisemin + 1-F1;
+            Fnoisemax = spectral_analysis_batch.getfreq(Fs,winsize,noise_freq + width_f); 
+            Fnoisemax= Fnoisemax + 1-F1;
             
             % replace noise band range with nans
             psd(Fnoisemin:Fnoisemax) = nan;
@@ -927,7 +948,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % Remove Nans
             if conds >1
-                inarray = extr_feature(:,all(~isnan(inarray)));
+                inarray = inarray(:,all(~isnan(inarray)));
             end
             
             % calculate sem
@@ -1135,14 +1156,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 figure(f3)
                 temp_data = temp_data - mean(temp_data);
                 xdft = (abs(fft(temp_data)).^2);
-                xdft = 2*xdft*(1/(Fs*length(temp_data)));
+                xdft = 2*xdft*(1/(new_Fs*length(temp_data)));
                 psdx = xdft((1:length(xdft)/2+1));
                 plot(freq(F1:F2),psdx(F1:F2),'linewidth',1.5)
                 ax3 = gca;
                 set(gcf,'color','w');ax3.Box = 'off';ax3.TickDir = 'out';
                 ax3.XColor = 'k';ax3.YColor = 'k';ax3.FontSize = 14;ax3.FontWeight = 'bold';
-                xlabel('Power (V^2 Hz^{-1})')
-                ylabel('Freq. (Hz)')
+                ylabel('Power (V^2 Hz^{-1})')
+                xlabel('Freq. (Hz)')
                 
                 
                 figure(f1)
@@ -1992,7 +2013,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             [W,L] = size(power_matrix);
             p_matrix_out =  zeros(W,L);
             for i = 1:L %loop through psd bins
-                p_matrix_out(:,i) = obj.remove_noise_psd(power_matrix(:,i),obj.Fs,obj.winsize,obj.noise_var,obj.noisewidth_var);
+                p_matrix_out(:,i) = obj.remove_noise_psd(power_matrix(:,i),obj.Fs,obj.winsize,obj.noise_var,obj.noisewidth_var,obj.F1);
             end
         end
         
@@ -3750,7 +3771,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             strct1.removeNans = 1;
             
             % parameter difference
-            par_vec = [2,3];
+            par_vec = [1,2];
             
             % choose label
             switch strct1.par_var
@@ -3783,11 +3804,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 
                 subplot(1,length(folder_list),i)
                 % choose between dot or bar plot
-                obj.dot_plot(extr_feature(par_vec,:),psd_object.condition_id(par_vec),strct1.ind_v,strct1.mean_v...
+                spectral_analysis_batch.dot_plot(extr_feature(par_vec,:),psd_object.condition_id(par_vec),strct1.ind_v,strct1.mean_v...
                     ,[col_face;col_edge])
                 
                 % format graph
-                obj.prettify_o(gca)
+                spectral_analysis_batch.prettify_o(gca)
                 
                 bar_vector{i} = extr_feature(par_vec(2),:) - extr_feature(par_vec(1),:);
                 [~, pval(i)] = ttest(extr_feature(par_vec(2),:),extr_feature(par_vec(1),:));
