@@ -3,7 +3,7 @@
 
 MatWand Consists of:
 
-a) one main class --> Spectral_Analysis_batch.m
+a) Main class --> Spectral_Analysis_batch.m
 
 b) helper sciprts -->
 
@@ -17,7 +17,7 @@ b) helper sciprts -->
 
                       smooth_v1.m - MATLABs 2018 smooth function
                       
-c) one main application --> batch_LFP_analysis.mIapp
+c) Main application --> batch_LFP_analysis.mIapp
 
 d) helper applications -->
 
