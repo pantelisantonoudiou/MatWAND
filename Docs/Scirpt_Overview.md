@@ -5,7 +5,7 @@ MatWand Consists of:
 
 a) Main class --> Spectral_Analysis_batch.m
 
-b) helper sciprts -->
+b) Helper sciprts -->
 
                       inputmod.m - Author : The MathWorks, Inc.
 
@@ -19,7 +19,7 @@ b) helper sciprts -->
                       
 c) Main application --> batch_LFP_analysis.mIapp
 
-d) helper applications -->
+d) Helper applications -->
 
                           set_parameters.mIapp -  user input for parameter input
                           
