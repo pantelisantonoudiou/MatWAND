@@ -21,9 +21,9 @@ c) Main application --> batch_LFP_analysis.mIapp
 
 d) Helper applications -->
 
-                          set_parameters.mIapp -  user input for parameter input
+                        set_parameters.mIapp -  user input for parameter input
                           
-                          psd_proc_uinput.mIapp -  user input for psd pre-processing
+                        psd_proc_uinput.mIapp -  user input for psd pre-processing
 
 
 
