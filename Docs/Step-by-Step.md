@@ -1,8 +1,8 @@
 ## MatWAND data processing:
 
-1) Load Folder Directory (matlab or binary files).
+1) Load Folder Directory.
 
-2) Convert voltage traces to power spectral density (PSD) using the fft transform (https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html) and store to "raw_psd" folder.
+2) Convert voltage traces to power spectral density (PSD) using the [fft transform](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html) and store to "raw_psd" folder.
 
 + Automatic separation of .mat files based on comment times.
 
