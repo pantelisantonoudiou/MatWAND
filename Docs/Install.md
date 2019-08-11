@@ -7,6 +7,6 @@ b) Integrate Matlab with [Git](https://www.mathworks.com/help/matlab/matlab_prog
 
 # Run
 
- Launch the appication file 'batch_LFP_analysis.mlapp'
+ Launch the appication file 'batch_LFP_analysis.mlapp'.
 
 **[<< Back to Main Page](/README.md)**
