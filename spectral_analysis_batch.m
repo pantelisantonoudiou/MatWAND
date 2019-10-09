@@ -70,7 +70,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         winsize % spectral window duration in samples (depends on sampling rate)
         block_number = 1; % block
         channel_No = 1; % channel to be analyzed
-        channel_struct = {'BLA'}
+        channel_struct = {'BLA'};
         
         % for multichannel long recordings
         Tchannels = 3; % channels per file
@@ -340,8 +340,28 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         
+        % get unique list from array with multiple conditions
+        function exp_list = get_unique_list(exp_list,conds)
+            % exp_list = get_unique_list(exp_list,conds)
+            % assumes that exp_list and conditions match
+            % no row contains all empty cells        
+            
+            % loop across conditions to find a column wit non empty
+            for i = 1 : length(conds)              
+                % if not empty get unique list
+                if any(cellfun(@isempty,exp_list(:,i))) == 0
+                    exp_list = strrep(exp_list(:,i),conds{i},'');
+                    break                 
+                end
+                
+            end
+             
+            % remove file ending
+            exp_list = strrep(exp_list,'.mat','');
+                
+        end
         
-        % sort raw LFP list
+        % sort single column experiment list
         function exp_list = sort_rawLFP_list(mat_dir)
             % exp_list = sort_rawLFP_list(mat_dir)
             
@@ -358,8 +378,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             exp_list = exp_list(idx);
         end
         
-        
-        
+      
         %%% not used currently %%%
         
         % sort list % needs completion
@@ -519,7 +538,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % input parameters are PSD and frequency vectors
             
             % smooth psd curve (smooth factor of 5)
-            smth_psd = smooth_v1(psd_raw);
+            smth_psd = smooth_v1(psd_raw,5);
             
             % find peak power and index at which the peak power occurs
             [Peak, x_index] = max(smth_psd);
@@ -690,148 +709,87 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 end
             end
         end
-        
-        %  get user input for Psd parameter plot properties
-        function [answer, canceled,formats]  = input_prompt()
+               
+        % Custom Plot user properties
+        %  get user input & pass into cella struct
+        function [answer, canceled,formats,cella]  = input_prompt(varargin)
+            % [answer, canceled,formats]  = input_prompt(choice_list)
+            % Generates gui user input from inputsdlg function
+            % [answer, canceled,formats,cella]  = spectral_analysis_batch.input_prompt() 
+            % [answer, canceled,formats,cella]  =
+            % spectral_analysis_batch.input_prompt('Flow','Fhigh','par_var')
+            % 'Flow';'Fhigh';'par_var';'norms_v';'mean_v','ind_v';'cond'
             
-            name = 'Analysis Input';
-            prompt = {'Low Frequency:';'High Frequency:';'Choose PSD parameter:';'Normalise to baseline?';...
-                'Plot Type'};
+            % enter name
+            name = 'User Input';
             
-            
-            % format types included
-            formats = struct('type', {}, 'style', {}, 'items', {}, ...
-                'format', {}, 'limits', {}, 'size', {});
-            
-            % new field
-            formats(1,1).type   = 'edit';
-            formats(1,1).format = 'integer';
-            formats(1,1).limits = [0.4 1000];
-            %
-            formats(2,1).type   = 'edit';
-            formats(2,1).format = 'integer';
-            formats(2,1).limits = [0.4 1000];
-            %
-            formats(3,1).type   = 'list';
-            formats(3,1).style  = 'popupmenu';
-            formats(3,1).items  = {'Peak Power', 'Peak Frequency', 'Power Area'};
-            %
-            formats(4,1).type   = 'list';
-            formats(4,1).style  = 'popupmenu';
-            formats(4,1).items  = {'true', 'false'};
-            %
-            formats(5,1).type   = 'list';
-            formats(5,1).style  = 'popupmenu';
-            formats(5,1).items  = {'Mean', 'Individual', 'Mean & Ind'};
-            
-            % set default answer
-            defaultanswer = {2,80,1,2,3};
-            
-            % obtain answer and canceled var through user input
-            [answer, canceled] = inputsdlg(prompt, name, formats, defaultanswer);
-            
-            % get back values
-            % eg. test = formats(3,1).items{answer{3}};
-            
-            
-        end
-        
-        %  get user input for psd parameter plot properties
-        function [answer, canceled,formats]  = input_prompt_ratio()
-            
-            name = 'Analysis Input';
-            prompt = {'Band - 1:';'Band - 2:';'Band Width';'Choose PSD parameter:';'Normalise to baseline?';...
-                'Plot Type'};
+            % set options
+            options.Resize = 'on';
+            options.Interpreter = 'tex';
+            options.CancelButton = 'on';
             
             % format types included
             formats = struct('type', {}, 'style', {}, 'items', {}, ...
                 'format', {}, 'limits', {}, 'size', {});
             
-            % new field
-            formats(1,1).type   = 'edit';
-            formats(1,1).format = 'integer';
-            formats(1,1).limits = [0.4 200];
-            %
-            formats(2,1).type   = 'edit';
-            formats(2,1).format = 'integer';
-            formats(2,1).limits = [0.4 200];
-            %
-            formats(3,1).type   = 'edit';
-            formats(3,1).format = 'integer';
-            formats(3,1).limits = [0.4 200];
-            %
-            formats(4,1).type   = 'list';
-            formats(4,1).style  = 'popupmenu';
-            formats(4,1).items  = {'Peak Power', 'Peak Frequency', 'Power Area'};
-            %
-            formats(5,1).type   = 'list';
-            formats(5,1).style  = 'popupmenu';
-            formats(5,1).items  = {'true', 'false'};
-            %
-            formats(6,1).type   = 'list';
-            formats(6,1).style  = 'popupmenu';
-            formats(6,1).items  = {'Mean', 'Individual', 'Mean & Ind'};
+            % set cell size
+            cell_size = [100, 30];
+                                 
+            % append all lists to an array
+            % choice string
+            prm_array(:,1) = {'Flow';'Fhigh';'par_var';'norms_v';'mean_v';'ind_v';'cond';'band1';'band2'};
+            % prompt
+            prm_array(:,2) = {'Low Frequency:';'High Frequency:';'Choose PSD parameter:';'Normalise to baseline?';...
+                'Plot Mean?';'Plot Individual?';'Comparison conditions';'Band - 1:';'Band - 2:'}; 
+            % default answer
+            prm_array(:,3) = {2; 80; 1; false; true;true; [1,2];[3,6];[6,12]};
+            % type
+            prm_array(:,4) = {'edit';'edit';'list';'check';'check';'check';'edit';'edit';'edit'};
+            % format
+            prm_array(:,5) = {'integer';'integer';'';'logical';'logical';'logical';'vector';'vector';'vector'};
+            % style
+            prm_array(:,6) = {'';'';'popupmenu';'checkbox';'checkbox';'checkbox';'';'';''};
+            % items
+            prm_array(:,7) = {'';'';{'Peak Power', 'Peak Frequency', 'Power Area'};'';...
+                '';'';'';'';''};
+    
             
-            % set default answer
-            defaultanswer = {5,10,4,3,2,3};
+            % take care of empty lists
+            if isempty(varargin) == 0
+                for ii = 1 :length(varargin)
+                    choice_list(ii) = find(contains(prm_array(:,1),varargin{ii}));
+                end
+            else
+                choice_list= 1:size(prm_array,1);
+            end
+            
+            % loop through choice list and crate inputsdlg format
+            for i = 1 : length(choice_list)
+                k = choice_list(i);
+                % append choices
+                prompt{i} = prm_array{k,2};
+                defaultanswer{i} = prm_array{k,3};
+                formats(i,1).type   = prm_array{k,4};
+                formats(i,1).format = prm_array{k,5};
+                formats(i,1).style = prm_array{k,6};
+                formats(i,1).items = prm_array{k,7};
+                formats(i,1).size   = cell_size;
+   
+            end
+            
+            % remove empty rows from structure
+            % formats = formats(~cellfun(@isempty,{formats.type}));
             
             % obtain answer and canceled var through user input
-            [answer, canceled] = inputsdlg(prompt, name, formats, defaultanswer);
+            [answer, canceled] = inputsdlg(prompt', name, formats, defaultanswer',options);
             
-            % get back values
-            % eg. test = formats(3,1).items{answer{3}};
-            
-        end
+            % put data in structure
+            cella=[];
+            for i = 1 : length(choice_list)
+                k = choice_list(i);
+                eval(['cella.' prm_array{k,1} '= answer{i};'])
+            end
         
-        %  get user input for psd parameter plot properties
-        function [answer, canceled,formats]  = input_prompt_plot()
-            
-            name = 'Analysis Input';
-            prompt = {'Band - 1:';'Band - 2:';'Band Width';'Choose PSD parameter:';'Normalise to baseline?';...
-                'Plot parameters';'Plot Type'};
-            
-            % format types included
-            formats = struct('type', {}, 'style', {}, 'items', {}, ...
-                'format', {}, 'limits', {}, 'size', {});
-            
-            % new field
-            formats(1,1).type   = 'edit';
-            formats(1,1).format = 'integer';
-            formats(1,1).limits = [0.4 200];
-            %
-            formats(2,1).type   = 'edit';
-            formats(2,1).format = 'integer';
-            formats(2,1).limits = [0.4 200];
-            %
-            formats(3,1).type   = 'edit';
-            formats(3,1).format = 'integer';
-            formats(3,1).limits = [0.4 200];
-            %
-            formats(4,1).type   = 'list';
-            formats(4,1).style  = 'popupmenu';
-            formats(4,1).items  = {'Peak Power', 'Peak Frequency', 'Power Area'};
-            %
-            formats(5,1).type   = 'list';
-            formats(5,1).style  = 'popupmenu';
-            formats(5,1).items  = {'true', 'false'};
-            %
-            formats(6,1).type   = 'list';
-            formats(6,1).style  = 'popupmenu';
-            formats(6,1).items  = {'Mean', 'Individual', 'Mean & Ind'};
-            %
-            formats(7,1).type   = 'list';
-            formats(7,1).style  = 'popupmenu';
-            formats(7,1).items  = {'Dot Plot', 'Bar Plot','Box Plot'};
-            
-            % set default answer
-            defaultanswer = {5,10,4,3,2,3,1};
-            
-            % obtain answer and canceled var through user input
-            [answer, canceled] = inputsdlg(prompt, name, formats, defaultanswer);
-            
-            % get back values
-            % eg. test = formats(3,1).items{answer{3}};
-            
         end
         
     end
@@ -874,7 +832,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             axhand.TickDir = 'out';
             axhand.XColor = 'k';
             axhand.YColor = 'k';
-            axhand.FontName = 'Arial';
+            axhand.FontName = 'Calibri';
             axhand.FontSize = 14;
             axhand.FontWeight = 'bold';
             %             axhand.LineWidth = 1;
@@ -2312,15 +2270,15 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         % load file
                         load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix'); %struct = rmfield(struct,'power_matrix')
                         
-                        %get mean and SEM
-                        [~, nperiods] = size(proc_matrix);
+                        % get mean and SEM
+                        [~, nperiods] = size(proc_matrix);%#ok
                         
-                        %get mean and sem
+                        % get mean and sem
                         mean_wave = mean(proc_matrix(Flow:Fhigh,:),2)';
                         sem_wave = std(proc_matrix(Flow:Fhigh,:),0,2)'/sqrt(nperiods);
                         mean_wave_plus = mean_wave+sem_wave;  mean_wave_minus = mean_wave-sem_wave;
                         
-                        %plot mean and shaded sem
+                        % plot mean and shaded sem
                         Xfill= horzcat(freqx_bound, fliplr(freqx_bound));   %#create continuous x value array for plotting
                         Yfill= horzcat(mean_wave_plus, fliplr(mean_wave_minus));
                         fill(Xfill,Yfill,col_sem,'LineStyle','none');
@@ -2581,13 +2539,13 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % plot individual experiments
             if strct1.ind_v == true
-                plot(t,feature_aver,'Color', [0.8 0.8 0.8])
+                plot(t,feature_aver,'-','Color', [0.8 0.8 0.8])
             end
             
             % plot mean
             if strct1.mean_v == true
                 fill(xfill,yfill,[0.4 0.4 0.4],'LineStyle','none')
-                plot(t,mean_wave,'k','Linewidth',1.5)
+                plot(t,mean_wave,'-ok','Linewidth',1.5)
             end
             
             % add arrow
@@ -2624,9 +2582,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function feature_aver = prm_ratio_time(obj,strct1)
             % feature_aver = prm_ratio_time(obj,strct1)
             % Plot PSD parameters vs time
-            % strct1.band1 = 5  low boundary
-            % strct1.band2 = 10 high boundary
-            % strct1.band_width = 5 high boundary
+            % strct1.band1 = [2 4]  low boundary
+            % strct1.band2 = [30 80] high boundary
             % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
             % strct1.norms_v = true % normalise
             % strct1.ind_v = true % plot individual experiments
@@ -2668,16 +2625,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     %                         continue
                     %                     end
                     % load file
-                    load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                    load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');  
                     
-                    % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
-                    
-                    % Band 1
+                    % Band 1 % get peak_power, peak_freq and power_area [psd_prm(1,:), psd_prm(2,:), psd_prm(3,:)]
                     [psd_prmA{1}, psd_prmA{2}, psd_prmA{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
-                        strct1.band1 - strct1.band_width,strct1.band1 + strct1.band_width);
+                        strct1.band1(1),strct1.band1(2));
                     % Band 2
                     [psd_prmB{1}, psd_prmB{2}, psd_prmB{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
-                        strct1.band2 - strct1.band_width,strct1.band2 + strct1.band_width);
+                        strct1.band2(1),strct1.band2(2));
                     
                     % get ratio
                     psd_prm1 = cell2mat(psd_prmA(strct1.par_var));
@@ -2763,7 +2718,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 subplot(3,1,2);hold on
                 fill(xfill1,yfill1,[0.4 0.4 0.4],'LineStyle','none')
                 plot(t,mean_wave1,'k','Linewidth',1.5)
-                ylabel([num2str(strct1.band1 - strct1.band_width) ' - ' num2str(strct1.band1 + strct1.band_width) ' Hz'])
+                ylabel([num2str(strct1.band1(1)) ' - ' num2str(strct1.band1(2)) ' Hz'])
                 xlim([t(1) - t(end)/20, t(end)+ t(end)/20])
                 ylim([min(feature_aver1(:))- mean(feature_aver1(:))/20, ...
                     max(feature_aver1(:))+ mean(feature_aver1(:))/20 ])
@@ -2772,7 +2727,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 subplot(3,1,3);hold on
                 fill(xfill2,yfill2,[0.4 0.4 0.4],'LineStyle','none')
                 plot(t,mean_wave2,'k','Linewidth',1.5)
-                ylabel([num2str(strct1.band2 - strct1.band_width) ' - ' num2str(strct1.band2 + strct1.band_width) ' Hz'])
+                ylabel([num2str(strct1.band2(1)) ' - ' num2str(strct1.band2(2)) ' Hz'])
                 xlim([t(1) - t(end)/20, t(end)+ t(end)/20])
                 ylim([min(feature_aver2(:))- mean(feature_aver2(:))/20, ...
                     max(feature_aver2(:))+ mean(feature_aver2(:))/20 ])
@@ -2791,7 +2746,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             
             % format graph
-            obj.super_labels([obj.channel_struct{obj.channel_No} ' ' num2str(strct1.band1 ) ' / ' num2str(strct1.band2)  ' Hz'],[],label_y)
+            lim1 = mean(strct1.band1);
+            lim2 = mean(strct1.band2);
+            obj.super_labels([obj.channel_struct{obj.channel_No} ' ' num2str(lim1) ' / ' num2str(lim2) ' Hz'],[],label_y)
             
         end
         
@@ -2994,9 +2951,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function extr_feature = aver_psd_prm_ratio(obj,strct1,plot_type)
             % extr_feature = aver_psd_prm_ratio(obj,strct1,plot_type)
             % Plot average PSD parameters
-            % strct1.band1 = 5  low boundary
-            % strct1.band2 = 10 high boundary
-            % strct1.band_width = 5 high boundary
+            % strct1.band1 = [5 10]  low boundary
+            % strct1.band2 = [10 20] high boundary
             % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
             % strct1.norms_v = true % normalise
             % strct1.ind_v = true % plot individual experiments
@@ -3008,12 +2964,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get exp list
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
-            
+
             % get freq parameters
-            f_range(1) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 - strct1.band_width) - obj.F1+1;
-            f_range(2) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 + strct1.band_width) - obj.F1+1;
-            f_range(3) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 - strct1.band_width) - obj.F1+1;
-            f_range(4) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 + strct1.band_width) - obj.F1+1;
+            f_range(1) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1(1)) - obj.F1+1;
+            f_range(2) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1(2)) - obj.F1+1;
+            f_range(3) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2(1)) - obj.F1+1;
+            f_range(4) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2(2)) - obj.F1+1;
             
             % get frequency vector
             freq = eval(obj.freq_cmd); freq = freq(obj.F1:end);
@@ -3074,8 +3030,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             % graph title
-            title([obj.channel_struct{obj.channel_No} ' ' num2str(strct1.band1) ' / ' num2str(strct1.band2) ...
-                ' (' num2str(strct1.band_width) ') Hz'])
+            title([obj.channel_struct{obj.channel_No} ' ' num2str(mean(strct1.band1)) ' / ' num2str(mean(strct1.band2)) ...
+                ' Hz'])
             
             % choose label
             switch strct1.par_var
@@ -3176,9 +3132,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function [feature_aver, conds] = prm_prm_ratio_matrix(obj,strct1)
             % feature_aver = prm_ratio_time(obj,strct1)
             % Plot PSD parameters vs time
-            % strct1.band1 = 5  low boundary
-            % strct1.band2 = 10 high boundary
-            % strct1.band_width = 5 high boundary
+            % strct1.band1 = [3 6]  low boundary
+            % strct1.band2 = [40 80] high boundary
             % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
             % strct1.norms_v = true % normalise
             
@@ -3211,10 +3166,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     
                     % Band 1
                     [psd_prmA{1}, psd_prmA{2}, psd_prmA{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
-                        strct1.band1 - strct1.band_width,strct1.band1 + strct1.band_width);
+                        strct1.band1(1), strct1.band1(2));
                     % Band 2
                     [psd_prmB{1}, psd_prmB{2}, psd_prmB{3}] = obtain_pmatrix_params(obj,proc_matrix,freqx,...
-                        strct1.band2 - strct1.band_width,strct1.band2 + strct1.band_width);
+                        strct1.band2(1),strct1.band2(2));
                     
                     % get ratio
                     psd_prm1 = cell2mat(psd_prmA(strct1.par_var));
@@ -3315,7 +3270,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % Plot average PSD parameters
             % strct1.band1 = 5  low boundary
             % strct1.band2 = 10 high boundary
-            % strct1.band_width = 5 high boundary
             % strct1.par_var = 1 % 1- peak power, 2 - peak freq, 3. power area
             % strct1.norms_v = true % normalise
             % strct1.ind_v = true % plot individual experiments
@@ -3328,10 +3282,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
             
             % get freq parameters
-            f_range(1) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 - strct1.band_width) - obj.F1+1;
-            f_range(2) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1 + strct1.band_width) - obj.F1+1;
-            f_range(3) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 - strct1.band_width) - obj.F1+1;
-            f_range(4) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2 + strct1.band_width) - obj.F1+1;
+            f_range(1) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1(1)) - obj.F1+1;
+            f_range(2) = obj.getfreq(obj.Fs,obj.winsize,strct1.band1(2)) - obj.F1+1;
+            f_range(3) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2(1)) - obj.F1+1;
+            f_range(4) = obj.getfreq(obj.Fs,obj.winsize,strct1.band2(2)) - obj.F1+1;
             
             % get frequency vector
             freq = eval(obj.freq_cmd); freq = freq(obj.F1:end);
@@ -3365,7 +3319,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         
-        % need to add ratios to the app !!!
+        
         % Export mean psd parameters to excel table
         function excel_meanprms(obj,strct1,ratio)
             % excel_meanprms(obj,strct1)
@@ -3386,11 +3340,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             param_units =  {' (V^2/Hz)'; ' (Hz)'; ' (V^2)'};
             
             % get matlab directory for processed psds
-            mat_dir = dir(fullfile(obj.lfp_data_path,'*.mat'));
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
             
-            % get sorted list
-            exp_list = spectral_analysis_batch.sort_rawLFP_list(mat_dir);
-            exp_list = erase(exp_list,'.mat');
+            % get sorted unique list
+            exp_list = spectral_analysis_batch.get_exp_array(mat_dir,obj.condition_id);
+            exp_list = spectral_analysis_batch.get_unique_list(exp_list,obj.condition_id);
             
             % get matrix with psd properties
             for i = 1:3
@@ -3417,20 +3371,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             prm_names = cell(1,W);
             
             % add conditions and variable names
-            for i = 1 : conds
-                if i == 1
-                    k = 2;
-                    table_names(k:k+2) = obj.condition_id;
-                    prm_names{k+1} = [strrep(param_array{i},'_',' ') param_units{i}];
-                else
-                    k = k + 4;
-                    table_names(k:k+2) = obj.condition_id;
-                    prm_names{k+1} = [strrep(param_array{i},'_',' ') param_units{i}];
-                end
-            end
-            
+            k = 2;
+            prm_names(k:conds+1:(W-conds+1)) = cellfun(@(x,y) [x  ' ' y],param_array,param_units,'un',0);
+            table_names(k:k+conds-1) = obj.condition_id;      
+                    
             % merge main array with column names
-            merged_array = [table_names; prm_names; table_array];
+            merged_array = [prm_names; table_names;  table_array];
             
             % get spreadsheet file name
             file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_aver'];
@@ -3440,6 +3386,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
         end
         
+        % need to add ratios to time !!!
         % Export psd parameters vs time to excel table
         function excel_psd_time(obj,strct1,ratio)
             % excel_psd_time(obj,strct1)
@@ -3686,8 +3633,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % get title string
                 ttl_string = [num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
             else
-                ttl_string = [num2str(strct1.band1) ' / ' num2str(strct1.band2) ...
-                    ' Width (' num2str(strct1.band_width) ') Hz'];
+                ttl_string = [num2str(mean(strct1.band1)) ' / ' num2str(mean(strct1.band2)) ...
+                    ' Hz'];
             end
             
             % choose label
@@ -3766,12 +3713,23 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         % Plot between conditions (average)
         function [bar_vector,pval] = cmp_psd_prm_aver(obj,strct1,folder_list,ratio)
             % [bar_vector,pval] = cmp_psd_prm_aver(obj,strct1,folder_list,ratio)
+            % strct inputs
+            % strct1.par_vec choose which conditions to compare
+            
+            
+            if ratio == false
+                % get title string
+                ttl_string = [num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
+            else
+                ttl_string = [num2str(mean(strct1.band1)) ' / ' num2str(mean(strct1.band2)) ...
+                    ' Hz'];
+            end
             
             % remove all rows with even 1 condition empty
             strct1.removeNans = 1;
             
             % parameter difference
-            par_vec = [1,2];
+            par_vec = strct1.cond;
             
             % choose label
             switch strct1.par_var
@@ -3785,6 +3743,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             %create _figure
             figure()
+            obj.super_labels(ttl_string,[],y_label)
             for i  = 1: length(folder_list)
                 
                 % load psd object for each set of experiments
@@ -3797,19 +3756,19 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     ttl_string = [psd_object.channel_struct{obj.channel_No} ' ' num2str(strct1.Flow) ' - ' num2str(strct1.Fhigh) ' Hz'];
                 else
                     extr_feature = aver_psd_prm_matrix_ratio(psd_object,strct1);
-                    ttl_string = [psd_object.channel_struct{psd_object.channel_No} ' ' num2str(strct1.band1) ' / ' num2str(strct1.band2)  ' Hz'];
+                    ttl_string = [psd_object.channel_struct{psd_object.channel_No} ' ' num2str(mean(strct1.band1)) ' / ' num2str(mean(strct1.band2))  ' Hz'];
                 end
                 % get color
                 [col_face,col_edge] = spectral_analysis_batch.color_vec2(i);
-                
+                % create subplot
                 subplot(1,length(folder_list),i)
+                
                 % choose between dot or bar plot
                 spectral_analysis_batch.dot_plot(extr_feature(par_vec,:),psd_object.condition_id(par_vec),strct1.ind_v,strct1.mean_v...
                     ,[col_face;col_edge])
-                
+                    
                 % format graph
                 spectral_analysis_batch.prettify_o(gca)
-                
                 bar_vector{i} = extr_feature(par_vec(2),:) - extr_feature(par_vec(1),:);
                 [~, pval(i)] = ttest(extr_feature(par_vec(2),:),extr_feature(par_vec(1),:));
                 bar_face_col(i,:) = col_face;
@@ -3820,6 +3779,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             
             figure();hold on
+            title(ttl_string)
             % get mean and SEM
             mean_vec = cellfun(@mean,bar_vector);
             std_vec = cellfun(@std,bar_vector);
@@ -3830,18 +3790,17 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             x_ticks = 1:length(mean_vec);
             
             
-            for i  = 1: length(folder_list)
-                
+            for i  = 1: length(folder_list)                
                 % add bars
                 bar(i, mean_vec(:,i),'FaceColor',bar_face_col(i,:),'EdgeColor',bar_edge_col(i,:));
                 % add significance
-                mysigstar(gca, i, (mean_vec(:,i)+ sem_vec(:,i))*1.1, pval(i));
-                
+                mysigstar(gca, i, (mean_vec(:,i)+ sem_vec(:,i))*1.1, pval(i));               
             end
-            % add SEM error
-            errorbar(mean_vec,sem_vec,'.','color','k','Linewidth',1);
             
+            % add SEM error
+            errorbar(mean_vec,sem_vec,'.','color','k','Linewidth',1);        
             xticks(x_ticks); xticklabels(strrep(bar_labels,'_',' '));
+            
             % set x boundaries
             lim_boundary = length(mean_vec)*0.3; % xtickangle(45);
             xlim([x_ticks(1)-lim_boundary x_ticks(end)+ lim_boundary]);
