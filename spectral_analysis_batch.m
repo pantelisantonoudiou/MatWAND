@@ -883,8 +883,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             [~,len] = size(feature_aver);
             %get mean line with sem
-            mean_wave = mean(feature_aver,2)';
-            sem_wave = std(feature_aver,0,2)'/sqrt(len);
+            mean_wave = nanmean(feature_aver,2)';
+            sem_wave = nanstd(feature_aver,0,2)'/sqrt(len);
             mean_wave_plus = mean_wave + sem_wave;
             mean_wave_minus = mean_wave - sem_wave;
             
@@ -3099,32 +3099,38 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                             wave_temp = psd_prm(strct1.par_var,:);
                             wave_base = mean(psd_prm(strct1.par_var,:));
                         else
-                            %-% concatanate baseline & drug segments
+                            %-% concatanate conditions (baseline & drug segments)
                             wave_temp = horzcat(wave_temp,psd_prm(strct1.par_var,:));
                         end
                         
-                        if ii == conds && strct1.norms_v == true % normalise
-                            wave_temp = wave_temp/wave_base;
-                        end
                         
                         % empty psd_prm
                         psd_prm = [];
                         
+                    else
+                        % get nans
+                        if ii == 1
+                            % create concatanated wave
+                            wave_temp = NaN(obj.condition_time(i),1);
+                        else
+                            %-% concatanate conditions (baseline & drug segments)
+                            wave_temp = horzcat(wave_temp, NaN(1,obj.condition_time(i)));
+                        end                                               
+                        
+                    end
+                    
+                    if ii == conds && strct1.norms_v == true % normalise
+                        wave_temp = wave_temp/wave_base;
                     end
                 end
                 
-                % save values to matrix for analysis and plotting
-                if isempty(exp_list{i,ii}) == 0
-                    feature_aver(:,i) = wave_temp;
-                else
-                    [len,~ ] = size(feature_aver);
-                    feature_aver(:,i) = NaN(len,1);
-                end
+                % append to feature aver
+                feature_aver(:,i) = wave_temp;
                 
             end
             
             % remove rows containg NaNs
-            %             feature_aver = feature_aver(:,all(~isnan(feature_aver)));
+            % feature_aver = feature_aver(:,all(~isnan(feature_aver)));
             
         end
         
@@ -3678,13 +3684,18 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 
                 k = strfind(psd_object.save_path,'\');
                 hold on;
+                
+                %plot ind
+                if strct1.ind_v ==1
+                    plot(t,feature_aver','Color',[0.9, 0.9, 0.9],'LineWidth',0.5)
+                end
+                
                 % shaded region with SEM
-                fill(xfill,yfill,col_light,'LineStyle','none')
-                h(1) =  plot(t,mean_wave,'o','Color',col_edge,'MarkerEdgeColor',col_edge,'MarkerFaceColor',col_face,...
-                    'MarkerSize',4,'DisplayName',strrep(psd_object.save_path(k(end-1)+1:k(end)-1),'_',' '));
-                
-                %                 plot(t,smooth_v1(mean_wave,15),'Color',col_edge,'LineWidth',2)
-                
+                if strct1.mean_v ==1
+                    fill(xfill,yfill,col_light,'LineStyle','none')
+                    plot(t,mean_wave,'o','Color',col_edge,'MarkerEdgeColor',col_edge,'MarkerFaceColor',col_face,...
+                        'MarkerSize',4,'DisplayName',strrep(psd_object.save_path(k(end-1)+1:k(end)-1),'_',' '));
+                end
                 % set x label
                 xlabel(['Time (' units ')'])
                 
@@ -3726,7 +3737,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             % remove all rows with even 1 condition empty
-            strct1.removeNans = 1;
+            strct1.removeNans = 0;
             
             % parameter difference
             par_vec = strct1.cond;
