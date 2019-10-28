@@ -746,7 +746,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % type
             prm_array(:,4) = {'edit';'edit';'list';'check';'check';'check';'edit';'edit';'edit'};
             % format
-            prm_array(:,5) = {'integer';'integer';'';'logical';'logical';'logical';'vector';'vector';'vector'};
+            prm_array(:,5) = {'float';'float';'';'logical';'logical';'logical';'vector';'vector';'vector'};
             % style
             prm_array(:,6) = {'';'';'popupmenu';'checkbox';'checkbox';'checkbox';'';'';''};
             % items
@@ -1460,7 +1460,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         %%% Automatic Separation %%%
         
-        % extract power matrix from mat file (files separated using matlab)
+        % extract power matrix from mat file (files separated using comments)
         function extract_pmatrix_mat_user(obj,Flow,Fhigh)
             %Enter parameters for time-frequency analysis
             %extract power matrix for each experiment and save in save_path
@@ -1497,8 +1497,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             freq = eval(obj.freq_cmd);
             
             % get index values of frequencies
-            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); %lower boundary
-            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut);%upper boundary
+            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut);  % lower boundary
+            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut); % upper boundary
             
             %initialise progress bar
             progressbar('Progress')
@@ -1533,7 +1533,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     % obtain power area and peak freq for initial analysis and
                     % remove outliers for plotting
                     [~, peak_freq, power_area] = obtain_pmatrix_params(obj,power_matrix,freq,Flow,Fhigh);
-                    [power_area,out_vector] = obj.remove_outliers(power_area,3);
+                    [power_area,out_vector] = obj.remove_outliers(power_area,5);
                     power_area(out_vector)=nan;
                     peak_freq(out_vector)=nan;
                     
@@ -1544,7 +1544,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     
                     plot(t,power_area,'k')
                     ylabel('Power Area (V^2)'); % y-axis label
-                    %add baseline and drug time from labchart comments
+                    % add baseline and drug time from labchart comments
                     [com_time,Txt_com] = obj.add_comments(obj.Fs,power_area,com,comtext,t,curr_block);%#ok
                     ax1 = gca; obj.prettify_o(ax1);
                     
@@ -1619,6 +1619,184 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             close all;
         end
+        
+        
+        % analyse the whole file
+        % extract power matrix from bin file (files separated using comments)
+        function extract_pmatrix_bin_user(obj,Flow,Fhigh)
+            
+            % prompt user for input
+            prompt = {'Enter conditions in sequence (separated by ;)'};
+            Prompt_title = 'Input';
+            dims = [1 40];
+            definput = {'cond1;cond2;cond3'};
+            cond_list = inputmod(prompt,Prompt_title,dims,definput);
+            
+            % create analysis folder
+            make_analysis_dir(obj)
+            
+            % make raw exvivo folder
+            obj.raw_psd_user =  fullfile(obj.raw_psd_path, 'raw_psd_user'); %['raw_psd_user_' obj.channel_struct{obj.channel_No}]
+            mkdir(obj.raw_psd_user)
+            
+            % get lfp directory
+            lfp_dir_bin = dir(fullfile(obj.lfp_data_path,'*.adibin'));
+            lfp_dir_mat = dir(fullfile(obj.lfp_data_path,'*.mat'));
+            
+            % get Fs
+            load(fullfile(obj.lfp_data_path, lfp_dir_mat(1).name),'samplerate')
+            obj.Fs = samplerate(1);
+            
+            % get winsize
+            obj.winsize = round(obj.Fs*obj.dur);
+            
+            % get freq vector
+            freq = eval(obj.freq_cmd);
+            
+            % get index values of frequencies
+            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut);  % lower boundary
+            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut); % upper boundary
+            
+            % get epoch in samples
+            epoch = obj.period_dur * 60 * obj.Fs;
+            
+            %initialise progress bar
+            progressbar('Total', 'Exp')
+            
+            % loop through experiments and perform fft analysis
+            for ii = 1:length(lfp_dir_bin)
+                
+                % get file path and load file
+                path_dir = fullfile(obj.lfp_data_path, lfp_dir_bin(ii).name);
+                path_mat = fullfile(obj.lfp_data_path, lfp_dir_mat(ii).name);
+                load(path_mat,'datastart','dataend','com','comtext')
+                              
+                % set data starting point for analysis
+                data_start = obj.set_array.start_time * epoch;
+                
+                % initalise power matrix
+                power_matrix = [];
+                
+                % map the whole file to memory
+                m = memmapfile(path_dir,'Format',obj.set_array.file_format);
+                
+                % get file length and clear memmap
+                len = length(m.Data); clear m;
+                loop_n = floor(len/epoch);
+                
+                for i = obj.start_time:loop_n %obj.start_time:obj.Nperiods % loop across total number of periods
+                    
+                    % update data_end
+                    if i == obj.start_time
+                        data_end = data_start + epoch;
+                    elseif i == loop_n
+                        data_end = len;
+                    else  % get back winsize
+                        data_end = data_start + epoch + obj.winsize/2;
+                    end
+                    
+                    % map the whole file to memory
+                    m = memmapfile(path_dir,'Format',obj.set_array.file_format);
+                    
+                    % get part of the channel
+                    OutputChannel = double(m.Data(data_start*obj.Tchannels+obj.channel_No : obj.Tchannels ...
+                        : data_end*obj.Tchannels));
+                    
+                    % clear memmap object
+                    clear m;
+                    
+                    % set correct units to Volts
+                    OutputChannel = OutputChannel/obj.set_array.norm;
+                    
+                    % obtain power matrix
+                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
+                    
+                    % concatenate power matrix
+                    power_matrix  = [power_matrix, power_matrix_single];
+                    
+                    % update data start
+                    data_start = data_start + epoch - obj.winsize/2;
+                    
+                    % update progress bar
+                    progressbar( [], i/loop_n)
+                end
+                              
+                
+                %%%%Plot power area %%%%
+                f = figure('units','normalized','position',[0.2 0.4 .6 .4]);
+                [~, ~, power_area] = obtain_pmatrix_params(obj,power_matrix,freq,Flow,Fhigh);
+                [power_area,out_vector] = obj.remove_outliers(power_area,5);
+                power_area(out_vector)=nan;
+                t =(1:size(power_matrix,2))*(obj.dur/2); % time in minutes
+                plot(t,power_area,'k')
+                ylabel('Power Area (V^2)'); % y-axis label
+                %add baseline and drug time from labchart comments
+                [com_time,Txt_com] = obj.add_comments(obj.Fs,power_area,com,comtext,t,1);%#ok
+                ax1 = gca; obj.prettify_o(ax1);
+                title(strrep(erase(lfp_dir_mat(ii).name,'.mat'),'_',' '))
+                
+                % get user input for data analysis
+                user_input = obj.separate_conds(com_time,cond_list{1});
+                
+                % check that user input has the correct format
+                if isempty(user_input)
+                    answer = questdlg('Terminate current analysis?', ...
+                        'Attention','Yes','No','No');
+                    if strcmp(answer,'Yes')
+                        % delete current analysis files
+                        close all
+                        delete(fullfile(obj.raw_psd_user,'*.mat'))
+                        rmdir (obj.raw_psd_user)
+                        rmdir (obj.raw_psd_path)
+                        rmdir (obj.save_path)
+                        return
+                    elseif strcmp(answer,'No')
+                        continue
+                    end
+                    
+                else
+                    % get integer of save variable
+                    save_var = str2double(user_input{1});
+                    
+                    if save_var == 0
+                        continue
+                        
+                    elseif save_var == 1
+                        if length(strsplit(user_input{2},';')) ~= length(com_time)
+                            % get user input for data analysis
+                            disp ('input structure is not correct')
+                            % reset vars
+                            close(f)
+                            save_var = 0;
+                            ii  = ii -1;
+                            continue
+                        end
+                        
+                    end
+                end            
+            
+            % save files
+            if (save_var == 1)
+                % get path to exp name without mat ending
+                exp_name = fullfile(obj.raw_psd_user,erase(lfp_dir_mat(ii).name,'.mat'));
+                % separate conditions
+                obj.separate_psd(power_matrix,exp_name,strsplit(user_input{2},';'),com_time,obj.dur)
+                close
+            end
+            
+            % update progress bar
+            progressbar( ii/length(lfp_dir_bin), [])
+        
+            end
+        
+            % save psd_object
+            psd_object = saveobj(obj);%#ok
+            save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
+            
+            close all;
+        end
+        
+        
         
         % consistent time separation across conditions and experiments
         function file_split_by_time(obj)
@@ -1810,7 +1988,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     progressbar( [], i/(obj.Nperiods-obj.start_time))
                 end
                 
-                % save power matrix
+                % save power matrix per experiment
                 save(fullfile(obj.raw_psd_path,erase(lfp_dir(ii).name,['.' obj.set_array.ext])),'power_matrix')
                 
                 % update progress bar
