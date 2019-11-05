@@ -28,12 +28,13 @@ You can find an example **[<< Here](/examples)**
 
 
 # b) .binary files
-The binary files contain only the data in raw voltage trace and currently have no capabability of automatically separating conditions. Any of the following file formats can be used (supported by matlab memmap function https://www.mathworks.com/help/matlab/ref/memmapfile.html)
+The binary files contain only the data in raw voltage trace. Any of the following file formats can be used (supported by matlab memmap function https://www.mathworks.com/help/matlab/ref/memmapfile.html)
 
     'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'single', 'double'
 
 In case single/double files are not used a normalisation number is needed to convert the files back to their original value.
 e.g. int16 files from labchart need to be divided by 320000 in order to return the data back to Volts.
+32bit-float files from labchart do need to be normalized
 
 
 **[<< Back to Main Page](/README.md)**
