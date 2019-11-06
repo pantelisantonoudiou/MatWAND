@@ -234,7 +234,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     
     methods(Access = public,Static) % A - Array sorting and filtering %
         
-        % create sorted array
+        % create sorted array - MAIN
         function exp_list = get_exp_array(mat_dir,conditions)
             
             % get exp array
@@ -256,6 +256,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % built sorted array
             exp_list = spectral_analysis_batch.sorted_array(exp_list,conditions,num_list);
         end
+        
         
         % extract column from struct
         function new_list = cellfromstruct(struct_mat,col)
@@ -320,15 +321,16 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % num_list unique exp identifier list
             
             % get list length and width
-            [len, wid]= size(filt_array);
-            
+            [~, wid] = size(filt_array); % [len, wid] = size(filt_array);
+            len = max(num_list);
             % pre-allocate list
             sorted_list = cell(len,wid);
             
             for ii = 1:wid % loop through conditions
                 for i = 1:len % loop across experiments and find match
                     % check if exp is present
-                    x = find(contains(filt_array,['_' num2str(num_list(i)) '_' str_conds{ii}]));
+                    x = find(contains(filt_array,['_' num2str(i) '_' str_conds{ii}]));
+                    % x = find(contains(filt_array,['_' num2str(num_list(i)) '_' str_conds{ii}]));
                     if x~=0
                         sorted_list{i,ii} = filt_array{x};
                     else
@@ -339,27 +341,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
         end
         
-        
-        % get unique list from array with multiple conditions
-        function exp_list = get_unique_list(exp_list,conds)
-            % exp_list = get_unique_list(exp_list,conds)
-            % assumes that exp_list and conditions match
-            % no row contains all empty cells        
-            
-            % loop across conditions to find a column wit non empty
-            for i = 1 : length(conds)              
-                % if not empty get unique list
-                if any(cellfun(@isempty,exp_list(:,i))) == 0
-                    exp_list = strrep(exp_list(:,i),conds{i},'');
-                    break                 
-                end
-                
-            end
-             
-            % remove file ending
-            exp_list = strrep(exp_list,'.mat','');
-                
-        end
+
         
         % sort single column experiment list
         function exp_list = sort_rawLFP_list(mat_dir)
@@ -380,6 +362,27 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
       
         %%% not used currently %%%
+        
+        % get unique list from array with multiple conditions
+        function exp_list = get_unique_list(exp_list,conds)
+            % exp_list = get_unique_list(exp_list,conds)
+            % assumes that exp_list and conditions match
+            % no row contains all empty cells        
+            
+            % loop across conditions to find a column with non empty
+            for i = 1:length(conds)              
+                % if not empty get unique list
+                if any(cellfun(@isempty,exp_list(:,i))) == 0
+                    exp_list = strrep(exp_list(:,i),conds{i},'');
+                    break                 
+                end
+                
+            end
+             
+            % remove file ending
+            exp_list = strrep(exp_list,'.mat','');
+                
+        end
         
         % sort list % needs completion
         function num_list = sort_list(raw_list,start_str,end_str)
@@ -717,7 +720,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % Generates gui user input from inputsdlg function
             % [answer, canceled,formats,cella]  = spectral_analysis_batch.input_prompt() 
             % [answer, canceled,formats,cella]  =
-            % spectral_analysis_batch.input_prompt('Flow','Fhigh','par_var')
+            % spectral_analysis_batch.input_prompt('Flow','Fhigh','par_var','remNans')
             % 'Flow';'Fhigh';'par_var';'norms_v';'mean_v','ind_v';'cond'
             
             % enter name
@@ -737,21 +740,21 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                                  
             % append all lists to an array
             % choice string
-            prm_array(:,1) = {'Flow';'Fhigh';'par_var';'norms_v';'mean_v';'ind_v';'cond';'band1';'band2'};
+            prm_array(:,1) = {'Flow';'Fhigh';'par_var';'norms_v';'mean_v';'ind_v';'cond';'band1';'band2';'remNans'};
             % prompt
             prm_array(:,2) = {'Low Frequency:';'High Frequency:';'Choose PSD parameter:';'Normalise to baseline?';...
-                'Plot Mean?';'Plot Individual?';'Comparison conditions';'Band - 1:';'Band - 2:'}; 
+                'Plot Mean?';'Plot Individual?';'Comparison conditions';'Band - 1:';'Band - 2:';'Paired'}; 
             % default answer
-            prm_array(:,3) = {2; 80; 1; false; true;true; [1,2];[3,6];[6,12]};
+            prm_array(:,3) = {2; 80; 1; false; true; true;[1,2]; [3,6]; [6,12]; true};
             % type
-            prm_array(:,4) = {'edit';'edit';'list';'check';'check';'check';'edit';'edit';'edit'};
+            prm_array(:,4) = {'edit';'edit';'list';'check';'check';'check';'edit';'edit';'edit';'check'};
             % format
-            prm_array(:,5) = {'float';'float';'';'logical';'logical';'logical';'vector';'vector';'vector'};
+            prm_array(:,5) = {'float';'float';'';'logical';'logical';'logical';'vector';'vector';'vector';'logical'};
             % style
-            prm_array(:,6) = {'';'';'popupmenu';'checkbox';'checkbox';'checkbox';'';'';''};
+            prm_array(:,6) = {'';'';'popupmenu';'checkbox';'checkbox';'checkbox';'';'';'';'checkbox'};
             % items
             prm_array(:,7) = {'';'';{'Peak Power', 'Peak Frequency', 'Power Area'};'';...
-                '';'';'';'';''};
+                '';'';'';'';'';''};
     
             
             % take care of empty lists
@@ -3520,7 +3523,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get sorted unique list
             exp_list = spectral_analysis_batch.get_exp_array(mat_dir,obj.condition_id);
-            exp_list = spectral_analysis_batch.get_unique_list(exp_list,obj.condition_id);
+%             exp_list = spectral_analysis_batch.get_unique_list(exp_list,obj.condition_id);
             
             % get matrix with psd properties
             for i = 1:3
