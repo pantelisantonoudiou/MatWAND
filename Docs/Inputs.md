@@ -33,9 +33,7 @@ The binary files contain only the data in raw voltage trace. Any of the followin
     'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'single', 'double'
 
 In case single/double files are not used a normalisation number is needed to convert the files back to their original value.
-e.g. int16 files from labchart need to be divided by 320000 in order to return the data back to Volts. 
-
-32bit-float files from labchart do need to be normalized.
+e.g. int16 files from labchart need to be divided by 320000 in order to return the data back to Volts.
 
 
 **[<< Back to Main Page](/README.md)**
