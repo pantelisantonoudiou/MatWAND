@@ -889,8 +889,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             mean_wave_minus = mean_wave - sem_wave;
             
             %plot mean and shaded sem
-            xfill=[t fliplr(t)];   %#create continuous x value array for plotting
-            yfill=[mean_wave_plus fliplr(mean_wave_minus)];
+            xfill = [t fliplr(t)];   %#create continuous x value array for plotting
+            yfill = [mean_wave_plus fliplr(mean_wave_minus)];
         end
         
         % dot plot
@@ -916,13 +916,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % plot individual experiments
             if indiv_var ==1
-                plot(inarray,'o-','color',col_vec(1,:),'MarkerFaceColor', col_vec(1,:),'MarkerSize',4);
-                
+                plot(inarray,'o-','color',col_vec(1,:),'MarkerFaceColor', col_vec(1,:),'MarkerSize',4);               
             end
             
             % plot mean experiment
             if mean_var == 1
-                plot(mean(inarray,2),'-','color',col_vec(2,:),'MarkerFaceColor', col_vec(2,:),'Linewidth',1.5)
+%                 plot(mean(inarray,2),'-','color',col_vec(2,:),'MarkerFaceColor', col_vec(2,:),'Linewidth',1.5)
                 errorbar(mean(inarray,2),sem_pkpower,'color',col_vec(2,:),'Linewidth',1.5)
             end
             
@@ -1797,7 +1796,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         
-        
         % consistent time separation across conditions and experiments
         function file_split_by_time(obj)
             % file_split_by_time(obj)
@@ -1807,12 +1805,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get separation vector
             cond_time = (cond_time * 60) / (obj.dur/2);% convert to blocks
-            
-            %             if length(cond_time)>2
-            %                 idx = find(cond_time==0);
-            %                 idx(idx == 1)=[];idx(idx == 2)=[];
-            %                 cond_time(idx) = 1;
-            %             end
             
             % get mat files in load_path directory
             mat_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
@@ -1843,7 +1835,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         [~,len] = size(power_matrix);
                         
                         if (cond_time(ii,2)-cond_time(ii,1))>len % check if extracted length exceeds bounds
-                            disp(['the file' cond_list{i,ii} 'exceeds size bounds'])
+                            disp(['the file' cond_list{i,ii} ' exceeds size bounds'])
                         else
                             
                             % get extracted times for each condition
