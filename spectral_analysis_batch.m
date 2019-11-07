@@ -3425,7 +3425,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             prm_names = cell(1,W);
             
             % add conditions and variable names
-            k = 2;
+            k = 1+length(obj.condition_id);
             prm_names(k:conds+1:(W-conds+1)) = cellfun(@(x,y) [x  ' ' y],param_array,param_units,'un',0);
             table_names(k:k+conds-1) = obj.condition_id;      
                     
