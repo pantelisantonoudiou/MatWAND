@@ -1340,7 +1340,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             mat_dir = dir(fullfile(path1,'*.mat'));
             
             % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id);
+            exp_list = obj.get_exp_array(mat_dir,obj.condition_id,0);
             
             % remove empty rows
             exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
