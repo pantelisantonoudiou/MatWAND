@@ -911,7 +911,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             [conds, exps] = size(inarray);
             
             % Remove Nans
-            if conds >1
+            if conds>1
                 inarray = inarray(:,all(~isnan(inarray)));
             end
             
@@ -2197,10 +2197,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             for i = 1:length(outlier_index)
                 % replace outlier value
                 if outlier_index(i) == 1
-                    p_matrix_out(:,i) =  median(power_matrix(:));
+                    p_matrix_out(:,i) =  NaN ;%median(power_matrix(:));
                 end
             end
             
+            % replace missing
+            p_matrix_out = fillmissing(p_matrix_out,'previous',2);
         end
         
         % linearise PSD
