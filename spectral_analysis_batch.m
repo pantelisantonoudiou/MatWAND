@@ -1889,7 +1889,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 obj.condition_time = str2num(answer{2});
                 
                 file_split_by_time(obj);
-                obj.StatusEditField.Value = 'Data Consistently Separated';
             end
         end
         
