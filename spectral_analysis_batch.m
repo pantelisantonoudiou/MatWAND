@@ -1312,11 +1312,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % create list
                 the_list{ii,1} = lfp_dir(ii).name;
                 
-                if obj.bin_size >0
-                    the_list{ii,2} = len*(obj.bin_size/2)/60;
-                else
-                    the_list{ii,2} = len*(obj.dur/2)/60;
-                end
+                % get duration
+                the_list{ii,2} = len*(obj.dur/2)/60;
+
                 
             end
             
@@ -1685,11 +1683,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % map the whole file to memory
                 m = memmapfile(path_dir,'Format',obj.set_array.file_format);
                 
-                % get file length and clear memmap
-                len = length(m.Data); clear m;
+                % get file length for one channel and clear memmap
+                len = length(m.Data)/obj.Tchannels; clear m;
                 loop_n = floor(len/epoch);
                 
-                for i = obj.start_time:loop_n %obj.start_time:obj.Nperiods % loop across total number of periods
+                for i = obj.start_time:loop_n
                     
                     % update data_end
                     if i == obj.start_time
@@ -2066,6 +2064,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     [proc_matrix,~]  = remove_outliers_pmatrix(obj,proc_matrix,freq,obj.LowFCut,obj.HighFCut);
                 end
                 
+%                 % detect nans after filling
+%                 if any(any(isnan(proc_matrix))) ==1
+%                     disp(i)
+%                 end
+                
                 %2%%  remove noise from data %%%
                 if obj.noise_var ~= -1
                     proc_matrix = remove_noise_pmatrix(obj,proc_matrix);
@@ -2201,7 +2204,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             % replace missing
-            p_matrix_out = fillmissing(p_matrix_out,'previous',2);
+            p_matrix_out = fillmissing(p_matrix_out,'pchip',2);
         end
         
         % linearise PSD
@@ -2964,8 +2967,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 
             end
             
-            % remove rows containg NaNs
-            
+
             % perform box plot before normalisation
             if plot_type == 3
                 spectral_analysis_batch.box_plot(extr_feature,obj.condition_id)
@@ -3199,9 +3201,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get exp list
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id,strct1.removeNans);
             
-            % remove empty rows
-%             exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
-            
             % get size of condition list
             [exps, conds] = size(exp_list);
             
@@ -3406,8 +3405,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 strct1.par_var = i;
                 if ratio == 0
                     [mat_psd_var,conds] = aver_psd_prm_matrix(obj,strct1); %#ok
-                else
-                    [mat_psd_var,~] = aver_psd_prm_matrix_ratio(obj,strct1);%#ok
+                elseif ratio == 1
+                    [mat_psd_var,conds] = aver_psd_prm_matrix_ratio(obj,strct1);%#ok
                 end
                 eval([param_array{i} ' = transpose(mat_psd_var);'])
             end
@@ -3434,8 +3433,13 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             merged_array = [prm_names; table_names;  table_array];
             
             % get spreadsheet file name
-            file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_aver'];
-            
+            if ratio == 0
+                file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_aver'];
+            elseif ratio == 1               
+                file_name = [num2str(strct1.band1(1)) '-' num2str(strct1.band1(2)) ' _ '...
+                    num2str(strct1.band2(1)) '-' num2str(strct1.band2(2)) ' Hz'];             
+            end
+                       
             % save table to excel file
             xlswrite(fullfile(obj.export_path, file_name),merged_array);
             
