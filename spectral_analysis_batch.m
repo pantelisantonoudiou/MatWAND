@@ -1623,7 +1623,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             close all;
         end
         
-        
         % analyse the whole file
         % extract power matrix from bin file (files separated using comments)
         function extract_pmatrix_bin_user(obj,Flow,Fhigh)
@@ -2204,7 +2203,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             % replace missing
-            p_matrix_out = fillmissing(p_matrix_out,'pchip',2);
+            p_matrix_out = fillmissing(p_matrix_out,'nearest',2);
         end
         
         % linearise PSD
@@ -2404,7 +2403,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 for ii = 1:conds %loop through condiitons
                     
                     % get color vectors
-                    [col_mean,~] = obj.color_vec(ii);
+                    [col_mean,col_sem] = obj.color_vec(ii);
                     
                     
                     legend();
@@ -2416,17 +2415,18 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         % load file
                         load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix'); %struct = rmfield(struct,'power_matrix')
                         
-                        %get mean and SEM
+                        % get mean and SEM
                         [~, nperiods] = size(proc_matrix);
                         
-                        %get mean and sem
+                        % get mean and sem
                         mean_wave = mean(proc_matrix(Flow:Fhigh,:),2)';
                         sem_wave = std(proc_matrix(Flow:Fhigh,:),0,2)'/sqrt(nperiods);
                         mean_wave_plus = mean_wave+sem_wave;  mean_wave_minus = mean_wave-sem_wave;
                         
-                        %plot mean and shaded sem
+                        % plot mean and shaded sem
                         Xfill= horzcat(freqx_bound, fliplr(freqx_bound));   %#create continuous x value array for plotting
                         Yfill= horzcat(mean_wave_plus, fliplr(mean_wave_minus));
+                        fill(Xfill,Yfill,col_sem,'LineStyle','none','DisplayName','SEM');
                         plot(freqx_bound,mean_wave,'color', col_mean,'Linewidth',1.5,'DisplayName',title_str{ii,i});
                         
                     else
@@ -3412,7 +3412,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             % convert matrix to cell
-            extr_features = num2cell([ peak_power NaN(length(exp_list),1) peak_freq NaN(length(exp_list),1) power_area]);
+            extr_features = num2cell([ peak_power NaN(size(exp_list,1),1) peak_freq NaN(size(exp_list,1),1) power_area]);
             
             % add exp id
             table_array = [exp_list extr_features];
