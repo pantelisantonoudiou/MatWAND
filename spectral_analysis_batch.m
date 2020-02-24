@@ -344,7 +344,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
         end
         
-
+        %%% ----------------- %%%
+        
         
         % sort single column experiment list
         function exp_list = sort_rawLFP_list(mat_dir)
@@ -363,90 +364,24 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             exp_list = exp_list(idx);
         end
         
-      
-        %%% not used currently %%%
-        
-        % get unique list from array with multiple conditions
-        function exp_list = get_unique_list(exp_list,conds)
-            % exp_list = get_unique_list(exp_list,conds)
-            % assumes that exp_list and conditions match
-            % no row contains all empty cells        
+        % get unique conditions from cell array
+        function unique_conds = isolate_condition(explist,nfromlast)
+            % unique_conds = isolate_condition(explist,nfromlast)
             
-            % loop across conditions to find a column with non empty
-            for i = 1:length(conds)              
-                % if not empty get unique list
-                if any(cellfun(@isempty,exp_list(:,i))) == 0
-                    exp_list = strrep(exp_list(:,i),conds{i},'');
-                    break                 
-                end
-                
-            end
-             
-            % remove file ending
-            exp_list = strrep(exp_list,'.mat','');
-                
-        end
-        
-        % sort list % needs completion
-        function num_list = sort_list(raw_list,start_str,end_str)
-            % out_list = sort_list(raw_list,start_str,end_str)
-            
-            for i = 1: length(raw_list)
-                % check if condition exists
-                if isempty(raw_list{i}) == 0
-                    num_list(i) = str2double(cell2mat(extractBetween(...
-                        raw_list{i},start_str,end_str)));
-                else
-                    
-                    num_list(i) = nan;
-                end
+            % isolate_condition(list,nfromlast)
+            for i = 1:length(explist)
+               
+               % get condition
+               k = strfind(explist{i},'_');
+               templist{i} = explist{i}(k(end-nfromlast)+1:end);
             end
             
-            
+            % get unique conditions
+            unique_conds = unique(templist);
+            unique_conds = erase(unique_conds,'.mat');
         end
+
         
-        % filter list based on conditions
-        function filtered_list = filter_array(raw_list,str_conds)
-            % filtered_list = filter_list(raw_list,str_conds)
-            % returns a filtered array separated by conditions
-            
-            % get list length and width
-            wid = length(str_conds);
-            len = round(length(raw_list)/wid);
-            
-            % create filtered list
-            %filtered_list = cell(len,wid);
-            
-            for ii = 1:wid
-                % init loop counter
-                cntr = 1;
-                
-                for i = 1:length(raw_list)
-                    % loop across experiments and find match
-                    if isempty(strfind(raw_list{i},str_conds{ii}))==0
-                        
-                        filtered_list{cntr,ii} = raw_list(i);
-                        cntr = cntr+1;
-                    end
-                    
-                    
-                end
-                
-            end
-            
-        end
-        
-        % merge cell array into one string
-        function outarray = merge_cells(arrayin,str)
-            % outarray = merge_cells(arrayin,str)
-            % arrayin = input cell array
-            % separating string
-            outarray = arrayin{1};
-            for i= 1:length(arrayin)-1
-                outarray = [outarray str arrayin{i+1}];
-            end
-        end
-        %%% ----------------- %%%
     end
     
     methods(Access = public,Static) % B - PSD related %
@@ -1326,10 +1261,15 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function get_cond_times(obj,path1)
             % get_cond_times(obj,obj.proc_psd_path)
             
+            % get mat files in load_path directory
+            mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
+            exp_list = spectral_analysis_batch.cellfromstruct(mat_dir,1);
+            unique_conds = spectral_analysis_batch.isolate_condition(exp_list,1);
+            
             % get conditions
             prompt = {'Enter conditions ( separated with ; ):'};
             Prompt_title = 'For observation only'; dims = [1 50];
-            definput = {'wt_base;wt_veh;wt_allo'};
+            definput = {strjoin(unique_conds,';')};
             answer = inputmod(prompt,Prompt_title,dims,definput);
             
             obj.condition_id = strsplit(answer{1},';');
@@ -1807,7 +1747,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             cond_time = obj.condition_time;
             
             % get separation vector
-            cond_time = (cond_time * 60) / (obj.dur/2);% convert to blocks
+            cond_time = (cond_time * 60) / (obj.dur/2); % convert to blocks
             
             % get mat files in load_path directory
             mat_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
@@ -1875,16 +1815,19 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % wait for user to close the table
             uiwait(f);
             
+            % get unique conditions
+            unique_conds = spectral_analysis_batch.isolate_condition(the_list,0);
+            nums = mat2str(zeros(1,length(unique_conds)*2));nums(end)=[];nums(1)=[];
+            
             % get user input
             prompt = {'Conditions (separated by ;) :',' Condition duration - mins (space separated) :'};
             Prompt_title = 'Input'; dims = [1 35];
-            definput = {'base;etoh','-5 -0 0 8'};
+            definput = {strjoin(unique_conds,';'),nums};%'-5 -0 0 8'
             answer = inputmod(prompt,Prompt_title,dims,definput);
             
             if isempty(answer) == 0 % proceed only if user clicks ok
                 obj.condition_id = strsplit(answer{1},';');
-                obj.condition_time = str2num(answer{2});
-                
+                obj.condition_time = str2num(answer{2});                
                 file_split_by_time(obj);
             end
         end
@@ -2021,6 +1964,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
             
         end
+        
         
         %%% --------------------------------------------------------------- %%%
         

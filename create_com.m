@@ -24,7 +24,7 @@ comtext = char(split(answer{3},';'));
 samplerate = ones(1,ch_num) * str2double(answer{2});
 
 % pre allocate arrays
-com = ones(ch_num,5); com(:,3) = com_times*samplerate(1)*60;
+com = ones(length(com_times),5); com(:,3) = com_times*samplerate(1)*60;
 datastart = zeros(ch_num,1);
 dataend = zeros(ch_num,1);
 
