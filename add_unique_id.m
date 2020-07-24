@@ -1,11 +1,9 @@
+% get file path
+% -> file_path = 'C:\Users\panton01\Desktop\INvivo_data\acute_vhpc\saline_allo\raw_data_vhpc';
+% -> add_unique_id(file_path,'.mat')
 function add_unique_id(file_path,ext)
 % add_unique_id(file_path,ext)
 % add_unique_id(file_path,'.mat')
-
-% % get file path
-% % file_path = 'C:\Users\panton01\Desktop\paper_data\fig2_allo_mice\raw_data_BLA';
-% % file extension
-% % ext = '.mat';
 
 % get file list
 file_list = dir(fullfile(file_path, ['*', ext]));
@@ -32,6 +30,6 @@ for i = 1:length(file_list) % loop through files
     fprintf('from %s -----> %s \n',file_list(i).name,new_name)
 
 end
-disp('File have been renamed with unique IDs.')
+disp('Files have been renamed with unique IDs.')
 end
 
