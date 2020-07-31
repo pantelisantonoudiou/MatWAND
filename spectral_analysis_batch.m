@@ -103,9 +103,13 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         outlier_var = -1; % median multiple
         bin_size = -1; % new bin for merging (in seconds)
         
+        % initial condition separation (minutes)
+        cond_orig_sep_time = [];
         % condition identifier
         condition_id = [];
+        % condition time duration
         condition_time = [];
+
         
     end
     
@@ -1744,7 +1748,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % file_split_by_time(obj)
             
             % make all zeros except baseline to 1
-            cond_time = obj.condition_time;
+            cond_time = obj.cond_orig_sep_time;
             
             % get separation vector
             cond_time = (cond_time * 60) / (obj.dur/2); % convert to blocks
@@ -1827,7 +1831,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             if isempty(answer) == 0 % proceed only if user clicks ok
                 obj.condition_id = strsplit(answer{1},';');
-                obj.condition_time = str2num(answer{2});                
+                obj.cond_orig_sep_time = str2num(answer{2});                
                 file_split_by_time(obj);
             end
         end
