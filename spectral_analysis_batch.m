@@ -233,6 +233,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
         end
         
+    
+        
     end
     
     methods(Access = public,Static) % A - Array sorting and filtering %
@@ -1081,7 +1083,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-    
+
     
     %%% Dynamic methods %%%
     
@@ -1405,22 +1407,25 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     
     methods % A - FFT analysis %
         
-        %%% Automatic Separation %%%
+        %%% Manual Separation %%%
         
         % extract power matrix from mat file (files separated using comments)
-        function extract_pmatrix_mat_user(obj,Flow,Fhigh)
+        function extract_pmatrix_mat_user(obj)
             %Enter parameters for time-frequency analysis
             %extract power matrix for each experiment and save in save_path
             %.mat file saved from labchart with default setting
             
-            
             % prompt user for input
-            prompt = {'Enter conditions in sequence (separated by ;)'};
+            prompt = {'Enter observation frequency range','Enter conditions in sequence (separated by ;)'};
             Prompt_title = 'Input';
             dims = [1 40];
-            definput = {'cond1;cond2;cond3'};
+            definput = {'2 - 80','cond1;cond2;cond3'};
             cond_list = inputmod(prompt,Prompt_title,dims,definput);
             
+            % get observation frequencies
+            freq_range = split(cond_list{1}, '-');
+            Flow = str2double(freq_range{1});
+            Fhigh = str2double(freq_range{2});
             
             % create analysis folder
             make_analysis_dir(obj)
@@ -1502,7 +1507,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     ax2 = gca; obj.prettify_o(ax2);title(strrep(lfp_dir(i).name,'_',' '));
                     
                     % get user input for data analysis
-                    user_input = obj.separate_conds(com_time,cond_list{1});
+                    user_input = obj.separate_conds(com_time,cond_list{2});
                     
                     % check that user input has the correct format
                     if isempty(user_input)
@@ -1534,6 +1539,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                                 % get user input for data analysis
                                 disp ('input structure is not correct')
                                 save_var = 0;
+                                close all;
                                 continue
                             else
                                 curr_block = 0;
@@ -1569,15 +1575,20 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % analyse the whole file
         % extract power matrix from bin file (files separated using comments)
-        function extract_pmatrix_bin_user(obj,Flow,Fhigh)
+        function extract_pmatrix_bin_user(obj)
             
             % prompt user for input
-            prompt = {'Enter conditions in sequence (separated by ;)'};
+            prompt = {'Enter observation frequency range','Enter conditions in sequence (separated by ;)'};
             Prompt_title = 'Input';
             dims = [1 40];
-            definput = {'cond1;cond2;cond3'};
+            definput = {'2 - 80','cond1;cond2;cond3'};
             cond_list = inputmod(prompt,Prompt_title,dims,definput);
             
+            % get observation frequencies
+            freq_range = split(cond_list{1}, '-');
+            Flow = str2double(freq_range{1});
+            Fhigh = str2double(freq_range{2});
+
             % create analysis folder
             make_analysis_dir(obj)
             
@@ -1668,7 +1679,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 end
                               
                 
-                %%%%Plot power area %%%%
+                %%%% ----------- Plot power area ------------------ %%%%
                 f = figure('units','normalized','position',[0.2 0.4 .6 .4]);
                 [~, ~, power_area] = obtain_pmatrix_params(obj,power_matrix,freq,Flow,Fhigh);
                 [power_area,out_vector] = obj.remove_outliers(power_area,5);
@@ -1836,9 +1847,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
         end
         
-        %%% Manual Separation %%%
+        %%% Automatic Separation %%%
         
-        % extract power matrix from mat file (files per condition separated)
+        % extract power matrix from mat file (files not separated)
         function extract_pmatrix_mat(obj)
             
             % create analysis folder
@@ -1888,7 +1899,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             save(fullfile(obj.save_path,'psd_object.mat'),'psd_object');
         end
         
-        % extract power matrix from bin file (files per condition separated)
+        % extract power matrix from bin file (files not separated)
         function extract_pmatrix_bin(obj)
             % create analysis folder
             make_analysis_dir(obj)
