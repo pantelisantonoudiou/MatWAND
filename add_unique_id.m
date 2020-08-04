@@ -1,10 +1,13 @@
 % get file path
-% -> file_path = 'C:\Users\panton01\Desktop\INvivo_data\acute_vhpc\saline_allo\raw_data_vhpc';
+% -> file_path = 'C:\Users\panton01\Desktop\paper_data\sgGabrd\raw_data_bla';
 % -> add_unique_id(file_path,'.mat')
 function add_unique_id(file_path,ext)
 % add_unique_id(file_path,ext)
-% add_unique_id(file_path,'.mat')
+% add_unique_id(file_path,'.mat') or add_unique_id([],'.mat')
 
+if  isempty(file_path) % if file path get user dir
+    file_path = uigetdir();
+end
 % get file list
 file_list = dir(fullfile(file_path, ['*', ext]));
 
