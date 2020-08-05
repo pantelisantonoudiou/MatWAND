@@ -1270,7 +1270,13 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get mat files in load_path directory
             mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
             exp_list = spectral_analysis_batch.cellfromstruct(mat_dir,1);
-            unique_conds = spectral_analysis_batch.isolate_condition(exp_list,1);
+            
+            try
+                unique_conds = spectral_analysis_batch.isolate_condition(exp_list,1);
+            catch
+                disp('could not get unique conditions')
+                unique_conds = {'cond1';'cond2';'cond3'};
+            end
             
             % get conditions
             prompt = {'Enter conditions ( separated with ; ):'};
