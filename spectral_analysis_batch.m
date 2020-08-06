@@ -117,7 +117,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     
     %%% Static methods %%%
     
-    methods(Access = public,Static) % MISC %
+    methods(Access = public, Static) % MISC %
         
         % get unseparated condition (varied between conditions)
         function copy_user_files(source,dest,file_type)
@@ -237,10 +237,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-    methods(Access = public,Static) % A - Array sorting and filtering %
+    methods(Access = public, Static) % A - Array sorting and filtering %
         
-        % create sorted array - MAIN
-        function exp_list = get_exp_array(mat_dir,conditions,paired)
+        %%%%%%%%%%% ----- create sorted array - MAIN ------------ %%%%%%%%
+        function exp_list = get_exp_array(mat_dir, conditions, paired)
             
             % get exp array
             exp_id = spectral_analysis_batch.cellfromstruct(mat_dir,1);
@@ -265,10 +265,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
             end
         end
-        
+        %%%%%%%%%%% --------------------------------------------- %%%%%%%%
         
         % extract column from struct
-        function new_list = cellfromstruct(struct_mat,col)
+        function new_list = cellfromstruct(struct_mat, col)
             % cell_col = cellfromstruct(struct_mat,col)
             
             %convert structure to cell
@@ -279,7 +279,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % filter list based on conditions
-        function filtered_list = filter_list(raw_list,str_conds)
+        function filtered_list = filter_list(raw_list, str_conds)
             % filtered_list = filter_list(raw_list,str_conds)
             % returns a filtered array separated by conditions
             
@@ -296,7 +296,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % get experiment identifier
-        function num_array = get_exp_id(raw_list,start_str,condition_list)
+        function num_array = get_exp_id(raw_list, start_str, condition_list)
             % num_array = sort_array(raw_list,start_str,condition_list)
             % get list size
             [len, wid]= size(raw_list);
@@ -321,7 +321,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % build sorted array
-        function sorted_list = sorted_array(filt_array,str_conds,num_list)
+        function sorted_list = sorted_array(filt_array, str_conds, num_list)
             % sorted_list = sorted_array(filt_array,str_conds,num_list)
             % builds a sorted array
             % filt_array = m x n array  where m is experiment number and n is
@@ -371,7 +371,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % get unique conditions from cell array
-        function unique_conds = isolate_condition(explist,nfromlast)
+        function unique_conds = isolate_condition(explist, nfromlast)
             % unique_conds = isolate_condition(explist,nfromlast)
             
             % isolate_condition(list,nfromlast)
@@ -386,7 +386,35 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             unique_conds = unique(templist);
             unique_conds = erase(unique_conds,'.mat');
         end
-
+        
+        % check if input files are in the correct format
+        function file_correct = check_inputs(exp_path, file_ext)
+            % file_correct = spectral_analysis_batch.check_inputs(exp_path, file_ext)
+            % file_correct = spectral_analysis_batch.check_inputs(exp_path, '.mat')
+            
+            % get file paths
+            mat_dir = dir(fullfile(exp_path, ['*' file_ext]));
+            if isempty(mat_dur)
+                file_correct = 0;
+                return
+            end
+            
+            % get unique conditions
+            unique_conds = spectral_analysis_batch.isolate_condition({mat_dir.name},0);
+            try
+                % try to get experiment file list
+                exp_list = spectral_analysis_batch.get_exp_array(mat_dir,unique_conds,1);
+                
+                if size(exp_list,1) == 0 % if exp list size is zero
+                    file_correct = 0;
+                else % if exp list size is bigger than zero
+                    file_correct = 1;
+                end
+                
+            catch % if get_exp_array fails to execute
+                file_correct = 0;
+            end
+        end
         
     end
     
@@ -1104,9 +1132,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             obj.set_array.channel_struct = 'bla';  % app.ChannelStructureEditField.Value; % Channel structure
             obj.set_array.channel =  'bla'; % app.ChannelAnalyzedEditField.Value; % Channel to be analyzed
             
-            obj.set_array.file_format = 'int16'; % app.BinaryFormatEditField.Value; % file format
-            obj.set_array.norm = 320000; % app.NormFactorEditField.Value; % normalization factor for values (y)
-            obj. set_array.samplerate = 4000; % app.SamplerateEditField.Value; % sampling rate (samples per second)
+            obj.set_array.file_format = 'single'; % app.BinaryFormatEditField.Value; % file format
+            obj.set_array.norm = 1; % app.NormFactorEditField.Value; % normalization factor for values (y)
+            obj.set_array.samplerate = 4000; % app.SamplerateEditField.Value; % sampling rate (samples per second)
             obj.set_array.start_time = 1; % app.Analysis_Duration.Value; % start time for file analysis
             obj.set_array.end_time = 12; % app.Analysis_Duration_2.Value; % end time for file analysis
             
