@@ -394,8 +394,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get file paths
             mat_dir = dir(fullfile(exp_path, ['*' file_ext]));
-            if isempty(mat_dur)
-                file_correct = 0;
+            if isempty(mat_dir)
+                file_correct = -1;
                 return
             end
             
@@ -405,7 +405,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % try to get experiment file list
                 exp_list = spectral_analysis_batch.get_exp_array(mat_dir,unique_conds,1);
                 
-                if size(exp_list,1) == 0 % if exp list size is zero
+                if size(exp_list,2) ~= length(unique_conds) % check if exp list has columns equal to unique conditions
+                    file_correct = 0;
+                    return
+                end
+                
+                if  numel(exp_list) ~= length(mat_dir) % if exp list is not equal to file size
                     file_correct = 0;
                 else % if exp list size is bigger than zero
                     file_correct = 1;
