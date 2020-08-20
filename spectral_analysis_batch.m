@@ -114,7 +114,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     end
     
     
-    
     %%% Static methods %%%
     
     methods(Access = public, Static) % MISC %
@@ -821,10 +820,21 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % get color for vectors
         function [col_mean,col_sem] = color_vec(col_idx)
+            
             % create colour vectors
-            col_mat = [0 0 0; 1 0 0; 0 0 0.8; 0 0.7 0; 0 0.7 0.7];
-            col_sem_mat = [0.8 0.8 0.8; 1 0.8 0.8; 0.8 0.85 1; 0.75 0.9 0.75; 0.75 0.9 0.9];
-            %= col_mat; col_sem_mat(col_sem_mat==0)=0.9;
+            col_mat = [...
+                0 0 0;... 
+                0,0.45,0.74;... 
+                0.85, 0.325, 0.01;... 
+                0.4940, 0.1840, 0.5560;...
+                0.4706, 0.6706, 0.1882];
+            % create shade
+            col_sem_mat = [
+                0.9 0.9 0.9;... 
+                0.87, 0.95, 1;... 
+                1, 0.95, 0.85;... 
+                0.95, 0.85, 1;... 
+                0.85,  0.95, 0.85];...
             
             % never allow color index to exceed length of color vector
             if col_idx > length(col_mat)
@@ -1116,7 +1126,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-
     
     %%% Dynamic methods %%%
     
