@@ -1899,7 +1899,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             f = figure(); % plot figure
-            boxplot(dur_list,'Labels',unique_conds,'color','k');
+            boxplot(dur_list,'Labels',unique_conds,'color', [0 ,0, 0]);
+%             spectral_analysis_batch.dot_plot(dur_list',unique_conds,1,0,[0.5 0.5 0.5 ;0 0 0])
             ylabel('Duration - Minutes')
             ax1 = gca; spectral_analysis_batch.prettify_o(ax1)
             
