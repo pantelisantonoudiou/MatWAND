@@ -1861,17 +1861,41 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function time_locked_separation(obj)
             % time_locked_separation(obj)
             
-            % get file length
-            [colnames, the_list,~] = mat_table(obj);
-            f = figure();
-            uitable(f, 'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
+%             % get file length
+%             [colnames, the_list,~] = mat_table(obj);
+%             f = figure();
+%             uitable(f, 'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
             
-            % wait for user to close the table
-            uiwait(f);
+            % get emg files
+            lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
             
             % get unique conditions
-            unique_conds = spectral_analysis_batch.isolate_condition(the_list,0);
+            unique_conds = spectral_analysis_batch.isolate_condition({lfp_dir.name},1);
             nums = mat2str(zeros(1,length(unique_conds)*2));nums(end)=[];nums(1)=[];
+            
+            % get exp list
+            exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,1);
+            
+             % create duration list
+            dur_list = zeros(size(exp_list));
+            
+            % get size of condition list
+            [exps, conds] = size(exp_list);
+            
+            for i = 1:exps % loop through experiments
+                for ii = 1:conds % loop through conditions
+                    load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
+                    dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2)/60; % get in minutes
+                end
+            end
+            
+            f = figure(); % plot figure
+            boxplot(dur_list,'Labels',unique_conds,'color','k');
+            ylabel('Duration - Minutes')
+            ax1 = gca; spectral_analysis_batch.prettify_o(ax1)
+            
+            % wait for user to close
+            uiwait(f);
             
             % get user input
             prompt = {'Conditions (separated by ;) :',' Condition duration - mins (space separated) :'};
