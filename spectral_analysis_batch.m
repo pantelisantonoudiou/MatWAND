@@ -2240,7 +2240,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             x_condition_time = x_condition_time - dt;
         end
         
-        
         % Spectrogram - subplot for each experiment
         function spectrogram_subplot(obj,Flow,Fhigh,normlz,paired,sub_plot)
             % spectrogram_plot(obj,Flow,Fhigh)
@@ -2355,7 +2354,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
         end    
         
-        
         % Plot Aver PSD with SEM - subplot for each experiment in one figure
         function plot_subPSD(obj,Flow,Fhigh,paired,sub_plot)
             % plot_PSD_single(obj,Flow,Fhigh)
@@ -2372,12 +2370,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id,paired);
             
             % get freq parameters
-            Flow = obj.getfreq(obj.Fs,obj.winsize,Flow);
-            Fhigh = obj.getfreq(obj.Fs,obj.winsize,Fhigh);
-            
-            freq = eval(obj.freq_cmd);
-            freqx_bound = freq(Flow:Fhigh);
-            
+            Flow = obj.getfreq(obj.Fs,obj.winsize,Flow); % low bound
+            Fhigh = obj.getfreq(obj.Fs,obj.winsize,Fhigh); % high bound         
+            freq = eval(obj.freq_cmd); freqx_bound = freq(Flow:Fhigh); % get frequencies
             Flow = Flow - obj.F1+1; % new low boundary
             Fhigh = Fhigh - obj.F1+1; % new high boundary
             
@@ -2404,7 +2399,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     [col_mean,col_sem] = obj.color_vec(ii);
                     
                     
-                    legend();
                     % if file exists
                     if isempty(exp_list{i,ii})==0
                         
@@ -2412,21 +2406,18 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         
                         % load file
                         load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix'); %struct = rmfield(struct,'power_matrix')
-                        
-                        % get mean and SEM
-                        [~, nperiods] = size(proc_matrix);
-                        
+                                            
                         % get mean and sem
                         mean_wave = mean(proc_matrix(Flow:Fhigh,:),2)';
-                        sem_wave = std(proc_matrix(Flow:Fhigh,:),0,2)'/sqrt(nperiods);
+                        sem_wave = std(proc_matrix(Flow:Fhigh,:),0,2)'/sqrt(size(proc_matrix,2));
                         mean_wave_plus = mean_wave+sem_wave;  mean_wave_minus = mean_wave-sem_wave;
                         
                         % plot mean and shaded sem
                         Xfill= horzcat(freqx_bound, fliplr(freqx_bound));   %#create continuous x value array for plotting
                         Yfill= horzcat(mean_wave_plus, fliplr(mean_wave_minus));
                         fill(Xfill,Yfill,col_sem,'LineStyle','none','DisplayName','SEM');
-                        plot(freqx_bound,mean_wave,'color', col_mean,'Linewidth',1.5,'DisplayName',title_str{ii,i});
-                        
+                        p(ii) = plot(freqx_bound,mean_wave,'color', col_mean,'Linewidth',1.5);
+                        exp_name{ii} = title_str{ii,i};
                     else
                         title_str{ii,i} = 'NaN';%#ok
                         plot(NaN,'DisplayName',title_str{ii,i})
@@ -2440,6 +2431,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         obj.prettify_o(gca) 
                     end         
                 end
+                legend(p,exp_name);
             end
             
             % add labels
@@ -2505,14 +2497,15 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % plot mean and shaded sem
                 Xfill= horzcat(freqx_bound, fliplr(freqx_bound));   %#create continuous x value array for plotting
                 Yfill= horzcat(mean_wave_plus, fliplr(mean_wave_minus));
-                fill(Xfill,Yfill,col_sem,'LineStyle','none','DisplayName','SEM');
-                plot(freqx_bound,mean_wave,'color', col_mean,'Linewidth',1.5,'DisplayName',strrep(obj.condition_id{ii},'_',' ')); %
-                
+                fill(Xfill,Yfill,col_sem,'LineStyle','none');
+                p(ii) = plot(freqx_bound,mean_wave,'color', col_mean,'Linewidth',1.5); %
+                name_array{ii} = strrep(obj.condition_id{ii},'_',' ');
             end
             % prettify and add title
             xlabel('Freq. (Hz)') ;  ylabel ('Power (V^2 Hz^{-1})')
             axis1 = gca;obj.prettify_o(axis1)
             title(ttl_string)
+            legend(p, name_array)
             
         end
         
