@@ -483,7 +483,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % Returns the the outlier free signal (outfree_signal) where outliers are replaced by NaNs
             % index_vec indicates by 1 which points are outliers
             
-            %get threshold
+            % get threshold
             threshold_p = median(input) * median_mult;
             threshold_m = median(input) / median_mult;
             
@@ -722,7 +722,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             prm_array(:,2) = {'Low Frequency:';'High Frequency:';'Choose PSD parameter:';'Normalise to baseline?';...
                 'Plot Mean?';'Plot Individual?';'Comparison conditions';'Band - 1:';'Band - 2:';'Paired'}; 
             % default answer
-            prm_array(:,3) = {2; 80; 1; false; true; true;[1,2]; [3,6]; [6,12]; true};
+            prm_array(:,3) = {2; 80; 3; false; true; true;[1,2]; [3,6]; [6,12]; true};
             % type
             prm_array(:,4) = {'edit';'edit';'list';'check';'check';'check';'edit';'edit';'edit';'check'};
             % format
@@ -2478,8 +2478,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get size for each condition
             [exps, conds] = size(exp_list);
             
-            
-            
             for ii = 1:conds %loop through condiitons
                 
                 % get color vectors
@@ -2490,10 +2488,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     if isempty(exp_list{i,ii})==0
                         
                         % load file
-                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix'); %struct = rmfield(struct,'power_matrix')
+                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
                         
                         % get mean and SEM
-                        [~, nperiods] = size(proc_matrix);
                         temp_mean(:,i) = mean(proc_matrix(Flow:Fhigh,:),2)';
                     else
                         disp([exp_list{i,ii} ' is empty'])
@@ -2502,7 +2499,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 
                 % get mean and sem
                 mean_wave = mean(temp_mean,2)';
-                sem_wave = std(temp_mean,0,2)'/sqrt(nperiods);
+                sem_wave = std(temp_mean,0,2)'/sqrt(size(temp_mean,2));
                 mean_wave_plus = mean_wave + sem_wave;  mean_wave_minus = mean_wave-sem_wave;
                 
                 % plot mean and shaded sem
