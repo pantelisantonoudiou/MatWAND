@@ -95,6 +95,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         F2 % higher freq index of extracted raw psd
         analysed_range
         
+        % fft separation table
+        box_or_table= 'table'; % table OR box_plot
+        
         % psd processing variables
         norm_var = 'no'; % log(10), log(e), max_val
         linear_var = 'no'; %yes/no
@@ -103,12 +106,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         outlier_var = -1; % median multiple
         bin_size = -1; % new bin for merging (in seconds)
         
-        % initial condition separation (minutes)
-        cond_orig_sep_time = [];
-        % condition identifier
-        condition_id = [];
-        % condition time duration
-        condition_time = [];
+        % conditions
+        cond_orig_sep_time = []; % initial condition separation (minutes)
+        condition_id = []; % condition identifier
+        condition_time = []; % condition time duration
 
         
     end
@@ -1280,11 +1281,19 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get lfp directory
             lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
             
+            % get unique conditions
+            unique_conds = spectral_analysis_batch.isolate_condition({lfp_dir.name},1);
+            
+            % get exp list
+            exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,1);
+            
+            % init list
+            the_list = cell(length(lfp_dir),2);
             % loop through experiments and get exp name and length
             for ii = 1:length(lfp_dir)
                 
                 % get file path
-                Full_path = fullfile(obj.raw_psd_user, lfp_dir(ii).name);
+                Full_path = fullfile(obj.raw_psd_user, exp_list{ii});
                 
                 % map the file to memory
                 load(Full_path,'power_matrix');
@@ -1293,7 +1302,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 [~,len] = size(power_matrix);
                 
                 % create list
-                the_list{ii,1} = lfp_dir(ii).name;
+                the_list{ii,1} = exp_list{ii};
                 
                 % get duration
                 the_list{ii,2} = len*(obj.dur/2)/60;
@@ -1801,7 +1810,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             close all;
         end
         
-        
         % consistent time separation across conditions and experiments
         function file_split_by_time(obj)
             % file_split_by_time(obj)
@@ -1870,42 +1878,65 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function time_locked_separation(obj)
             % time_locked_separation(obj)
             
-%             % get file length
-%             [colnames, the_list,~] = mat_table(obj);
-%             f = figure();
-%             uitable(f, 'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
+            f = figure(); % init figure
+            lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat')); % get lfp files
+            unique_conds = spectral_analysis_batch.isolate_condition({lfp_dir.name},1); % get unique conditions
+            exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,1); % get exp list
             
-            % get emg files
-            lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
-            
-            % get unique conditions
-            unique_conds = spectral_analysis_batch.isolate_condition({lfp_dir.name},1);
-            nums = mat2str(zeros(1,length(unique_conds)*2));nums(end)=[];nums(1)=[];
-            
-            % get exp list
-            exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,1);
-            
-             % create duration list
-            dur_list = zeros(size(exp_list));
-            
-            % get size of condition list
-            [exps, conds] = size(exp_list);
-            
-            for i = 1:exps % loop through experiments
-                for ii = 1:conds % loop through conditions
-                    load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
-                    dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2)/60; % get in minutes
+            if strcmp(obj.box_or_table,'table') == 1
+                
+                % init list
+                the_list = cell(length(lfp_dir),2);
+                % loop through experiments and get exp name and length
+                for ii = 1:length(lfp_dir)
+                    
+                    % get file path
+                    Full_path = fullfile(obj.raw_psd_user, exp_list{ii});
+                    
+                    % map the file to memory
+                    load(Full_path,'power_matrix');
+                    
+                    % get time bins of power matrix
+                    [~,len] = size(power_matrix);
+                    
+                    % create list
+                    the_list{ii,1} = exp_list{ii};
+                    
+                    % get duration
+                    the_list{ii,2} = len*(obj.dur/2)/60;
                 end
+                
+                colnames = {'Exp-Name', 'Exp_Length_mins'};
+                exp_table = cell2table(the_list,'VariableNames', {'Exp_Name' 'Exp_Length_mins'});
+                uitable(f, 'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
+                
+            elseif strcmp(obj.box_or_table,'box_plot') == 1
+                
+                % create duration list
+                dur_list = zeros(size(exp_list));
+                
+                % get size of condition list
+                [exps, conds] = size(exp_list);
+                
+                for i = 1:exps % loop through experiments
+                    for ii = 1:conds % loop through conditions
+                        load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
+                        dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2)/60; % get in minutes
+                    end
+                end
+                
+                boxplot(dur_list,'Labels',unique_conds,'color', [0 ,0, 0]);
+                % spectral_analysis_batch.dot_plot(dur_list',unique_conds,1,0,[0.5 0.5 0.5 ;0 0 0])
+                ylabel('Duration - Minutes')
+                ax1 = gca; spectral_analysis_batch.prettify_o(ax1)
             end
-            
-            f = figure(); % plot figure
-            boxplot(dur_list,'Labels',unique_conds,'color', [0 ,0, 0]);
-%             spectral_analysis_batch.dot_plot(dur_list',unique_conds,1,0,[0.5 0.5 0.5 ;0 0 0])
-            ylabel('Duration - Minutes')
-            ax1 = gca; spectral_analysis_batch.prettify_o(ax1)
             
             % wait for user to close
             uiwait(f);
+            
+            % get example vector for splitting file based on unique
+            % conditions
+            nums = mat2str(zeros(1,length(unique_conds)*2));nums(end)=[];nums(1)=[];
             
             % get user input
             prompt = {'Conditions (separated by ;) :',' Condition duration - mins (space separated) :'};
@@ -1915,7 +1946,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             if isempty(answer) == 0 % proceed only if user clicks ok
                 obj.condition_id = strsplit(answer{1},';');
-                obj.cond_orig_sep_time = str2num(answer{2});                
+                obj.cond_orig_sep_time = str2num(answer{2});
                 file_split_by_time(obj);
             end
         end
@@ -3456,10 +3487,13 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get spreadsheet file name
             if ratio == 0
-                file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_aver'];
-            elseif ratio == 1               
-                file_name = [num2str(strct1.band1(1)) '-' num2str(strct1.band1(2)) ' _ '...
-                    num2str(strct1.band2(1)) '-' num2str(strct1.band2(2)) ' Hz'];             
+                flow_str = strrep(num2str(strct1.Flow),'.',','); fhigh_str = strrep(num2str(strct1.Fhigh),'.',',');
+                file_name = [obj.channel_struct{obj.channel_No} '_' flow_str '_' fhigh_str ' Hz_aver'];
+            elseif ratio == 1
+                flow_str1 = strrep(num2str(strct1.band1(1)),'.',','); fhigh_str1 = strrep(num2str(strct1.band1(2)),'.',',');
+                flow_str2 = strrep(num2str(strct1.band2(1)),'.',','); fhigh_str2 = strrep(num2str(strct1.band2(2)),'.',',');
+                file_name = [flow_str1 '-' fhigh_str1 ' _ '...
+                    flow_str2 '-' fhigh_str2 ' Hz'];             
             end
                        
             % save table to excel file
@@ -3538,7 +3572,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             %             e.Quit
         end
         
-        % Export mean psd parameters vs time to .mat file
+        % Export psd parameters vs time to .mat file
         function psd_to_mat_time(obj,strct1,ratio)
             % psd_to_mat_time(obj,strct1)
             
@@ -3575,10 +3609,11 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             index_time = x_condition_time;  conditions = obj.condition_id; time = t;
             
             % create appropriate file name
-            file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_time'];
+            flow_str = strrep(num2str(strct1.Flow),'.',','); fhigh_str = strrep(num2str(strct1.Fhigh),'.',',');
+            file_name = [obj.channel_struct{obj.channel_No} '_' flow_str '_' fhigh_str ' Hz_time'];
             
             % save .mat file
-            save(fullfile(obj.export_path,file_name),'peak_power','peak_freq','power_area','index_samples','index_time'...
+            save(fullfile(obj.export_path, file_name),'peak_power','peak_freq','power_area','index_samples','index_time'...
                 ,'time','time_units','conditions');
         end
         
@@ -3610,7 +3645,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             conditions = obj.condition_id;
             
             % get file name
-            file_name = [obj.channel_struct{obj.channel_No} '_' num2str(strct1.Flow) '_' num2str(strct1.Fhigh) ' Hz_aver'];
+            flow_str = strrep(num2str(strct1.Flow),'.',','); fhigh_str = strrep(num2str(strct1.Fhigh),'.',',');
+            file_name = [obj.channel_struct{obj.channel_No} '_' flow_str '_' fhigh_str ' Hz_aver'];
             
             % save .mat file
             save(fullfile(obj.export_path,file_name),'peak_power','peak_freq','power_area','conditions');
