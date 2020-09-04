@@ -96,7 +96,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         analysed_range
         
         % fft separation table
-        box_or_table= 'table'; % table OR box_plot
+        box_or_table= 'box_plot'; % table OR box_plot
         
         % psd processing variables
         norm_var = 'no'; % log(10), log(e), max_val
@@ -423,7 +423,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-    methods(Access = public,Static) % B - PSD related %
+    methods(Access = public, Static) % B - PSD related %
         
         %%% Extracting and manipulating the PSD %%%
         % fft analysis with hanning window
@@ -438,23 +438,28 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % create hanning window
             winvec = hann(winsize);
             
-            %ensure that input matches vector format of hann window
+            % ensure that input matches vector format of hann window
             if isrow(input_wave) == 1
                 winvec = winvec';
             end
+            
             % get correct channel length for analysis
-            Channel_length = length(input_wave)-(rem(length(input_wave),overlap));
-            % fprintf('%d samples were discarded to produce equal size windows\n',(rem(length(input_wave),winsize)))
+            channel_length = length(input_wave)-(rem(length(input_wave), overlap));
+            input_wave = input_wave(1:channel_length);
+            
+            % PAD start and end
+            input_wave = horzcat(input_wave(1: overlap), input_wave, input_wave(end + 1 - overlap :end));
             
             % preallocate waves
-            power_matrix = zeros(F2 - F1+1,(Channel_length/overlap)-2);
+            power_matrix = zeros(F2 - F1+1, round(length(input_wave)/overlap)-2);
             
             % removes dc component
             input_wave = input_wave - mean(input_wave);
             
             % initialise counter
             Cntr = 1;
-            for i=1:overlap:Channel_length -(overlap) %loop through signal segments with overlap
+            for i = 1:overlap:length(input_wave)-winsize % loop through signal segments with overlap
+
                 % get segment
                 signal = input_wave(i:i+winsize-1);
                 
@@ -572,7 +577,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
     end
     
-    methods(Access = public,Static) % C - User related %
+    methods(Access = public, Static) % C - User related %
         %%% unpacking matlab and adibin data %%%
         
         % unpack labchart matlab data
@@ -774,7 +779,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
     end
     
-    methods(Access = public,Static) % D - Plot related
+    methods(Access = public, Static) % D - Plot related
         
         % title,x- ,y- labels for subplot
         function super_labels(title_str,xlabel_str,ylabel_str)
@@ -1853,20 +1858,19 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         else
                             
                             % get extracted times for each condition
-                            if cond_time(ii,1)<0
-                                power_matrix = power_matrix(:,end + cond_time(ii,1):end + cond_time(ii,2));
+                            if cond_time(ii,1) < 0
+                                power_matrix = power_matrix(:,end + cond_time(ii,1)+1:end + cond_time(ii,2));
                             else
                                 power_matrix = power_matrix(:,cond_time(ii,1)+1:cond_time(ii,2));
                             end
                             
-                            %save file
+                            % save file
                             save(fullfile(obj.raw_psd_path,cond_list{i,ii}),'power_matrix')
                         end
                     end
                 end
-                
-                % update progress bar
-                progressbar (i/exps)
+
+                progressbar (i/exps) % update progress bar
             end
             
             % save psd_object
