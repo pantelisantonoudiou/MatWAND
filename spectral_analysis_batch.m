@@ -399,11 +399,15 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 return
             end
             
-            % get unique conditions
-            unique_conds = spectral_analysis_batch.isolate_condition({mat_dir.name},0);
+            try % try to get conditions   
+                unique_conds = spectral_analysis_batch.isolate_condition({mat_dir.name},0); % get unique conditions
+            catch
+                file_correct = 0;
+                return
+            end
             try
                 % try to get experiment file list
-                exp_list = spectral_analysis_batch.get_exp_array(mat_dir,unique_conds,1);
+                exp_list = spectral_analysis_batch.get_exp_array(mat_dir, unique_conds, 1);
                 
                 if size(exp_list,2) ~= length(unique_conds) % check if exp list has columns equal to unique conditions
                     file_correct = 0;
