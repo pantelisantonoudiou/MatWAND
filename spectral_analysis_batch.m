@@ -444,7 +444,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % ensure that input matches vector format of hann window
             if isrow(input_wave) == 1
-                winvec = winvec';
+                input_wave = input_wave';
             end
             
             % get correct channel length for analysis
@@ -452,7 +452,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             input_wave = input_wave(1:channel_length);
             
             % PAD start and end
-            input_wave = horzcat(input_wave(1: overlap), input_wave, input_wave(end + 1 - overlap :end));
+            input_wave = vertcat(input_wave(1: overlap), input_wave, input_wave(end + 1 - overlap :end));
             
             % preallocate waves
             power_matrix = zeros(F2 - F1+1, round(length(input_wave)/overlap)-2);
