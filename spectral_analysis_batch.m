@@ -399,29 +399,32 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 return
             end
             
-            try % try to get conditions   
-                unique_conds = spectral_analysis_batch.isolate_condition({mat_dir.name},0); % get unique conditions
-            catch
-                file_correct = 0;
-                return
-            end
-            try
-                % try to get experiment file list
-                exp_list = spectral_analysis_batch.get_exp_array(mat_dir, unique_conds, 1);
-                
-                if size(exp_list,2) ~= length(unique_conds) % check if exp list has columns equal to unique conditions
+            for i = 0:1 % check for one or two underscores
+                try % try to get conditions
+                    unique_conds = spectral_analysis_batch.isolate_condition({mat_dir.name},i); % get unique conditions
+                catch
                     file_correct = 0;
                     return
                 end
-                
-                if  numel(exp_list) ~= length(mat_dir) % if exp list is not equal to file size
+                try
+                    % try to get experiment file list
+                    exp_list = spectral_analysis_batch.get_exp_array(mat_dir, unique_conds, 1);
+                    
+                    if size(exp_list,2) ~= length(unique_conds) % check if exp list has columns equal to unique conditions
+                        file_correct = 0;
+                        return
+                    end
+                    
+                    if  numel(exp_list) ~= length(mat_dir) % if exp list is not equal to file size
+                        file_correct = 0;
+                    else % if exp list size is bigger than zero
+                        file_correct = 1;
+                        break % if file is correct break
+                    end
+                    
+                catch % if get_exp_array fails to execute
                     file_correct = 0;
-                else % if exp list size is bigger than zero
-                    file_correct = 1;
                 end
-                
-            catch % if get_exp_array fails to execute
-                file_correct = 0;
             end
         end
         
