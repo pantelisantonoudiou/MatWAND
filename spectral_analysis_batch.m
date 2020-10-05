@@ -2508,6 +2508,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     end         
                 end
                 legend(p,exp_name);
+                legend boxoff 
             end
             
             % add labels
