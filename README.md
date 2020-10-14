@@ -9,5 +9,4 @@
 - **[Script Overview](/Docs/Scirpt_Overview.md)**
 - **[Installation](/Docs/Install.md)**
 - **[Input](/Docs/Inputs.md)**
-- **[How it works](/Docs/Step-by-Step.md)** 
-- **[Under Development](/Docs/dev.md)**
+- **[How it works](/Docs/Step-by-Step.md)**
