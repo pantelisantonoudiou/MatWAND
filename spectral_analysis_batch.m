@@ -1225,7 +1225,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % save_changes
             save(fullfile(new_path,'psd_object'),'psd_object')
             
-            %copy object for use
+            % copy object for use
             reloc_obj = copy(psd_object);
             
         end
@@ -2277,7 +2277,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
             
             % replace missing
-            p_matrix_out = fillmissing(p_matrix_out,'nearest',2);
+            p_matrix_out = fillmissing(p_matrix_out,'nearest',2); %nearest
         end
         
         % linearise PSD
