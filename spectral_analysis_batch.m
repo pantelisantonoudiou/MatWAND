@@ -408,14 +408,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 end
                 try
                     % try to get experiment file list
-                    exp_list = spectral_analysis_batch.get_exp_array(mat_dir, unique_conds, 1);
+                    exp_list = spectral_analysis_batch.get_exp_array(mat_dir, unique_conds, 0);
                     
                     if size(exp_list,2) ~= length(unique_conds) % check if exp list has columns equal to unique conditions
                         file_correct = 0;
                         return
                     end
                     
-                    if  numel(exp_list) ~= length(mat_dir) % if exp list is not equal to file size
+                    if  numel(exp_list(~cellfun('isempty',exp_list))) ~= length(mat_dir) % if exp list is not equal to file size
                         file_correct = 0;
                     else % if exp list size is bigger than zero
                         file_correct = 1;
