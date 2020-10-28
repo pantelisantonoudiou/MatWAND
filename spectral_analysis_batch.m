@@ -1327,8 +1327,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % get times for conditions separated by user
-        function get_cond_times(obj,path1)
-            % get_cond_times(obj,obj.proc_psd_path)
+        function get_cond_times(obj, path1)
+            % get_cond_times(obj, obj.proc_psd_path)
             
             % get mat files in load_path directory
             mat_dir = dir(fullfile(obj.proc_psd_path,'*.mat'));
@@ -1353,14 +1353,17 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             mat_dir = dir(fullfile(path1,'*.mat'));
             
             % get exp list
-            exp_list = obj.get_exp_array(mat_dir,obj.condition_id,0);
-            
-            % remove empty rows
-            exp_list(any(cellfun(@isempty, exp_list), 2),:) = [];
-            
-            obj.condition_time=[];
+            exp_list = obj.get_exp_array(mat_dir, obj.condition_id, 0);
+                      
+            obj.condition_time = [];
             for ii = 1:length(obj.condition_id)
-                load(fullfile(path1, exp_list{1,ii}),'proc_matrix');
+                
+                % get non empty list
+                temp = exp_list(:,ii);
+                nonempty_list = temp(cellfun(@isempty, temp)==0);
+                
+                % load file and get size
+                load(fullfile(path1, nonempty_list{1}),'proc_matrix');
                 [~,lengthx] = size(proc_matrix);
                 obj.condition_time = [obj.condition_time, lengthx];
             end
