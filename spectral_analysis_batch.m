@@ -1689,11 +1689,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get epoch in samples
             epoch = obj.period_dur * 60 * obj.Fs;
             
-            %initialise progress bar
+            % initialise progress bar
             progressbar('Total', 'Exp')
             
+            ii = 1;
             % loop through experiments and perform fft analysis
-            for ii = 1:length(lfp_dir_bin)
+            while ii<=length(lfp_dir_bin)
                 
                 % get file path and load file
                 path_dir = fullfile(obj.lfp_data_path, lfp_dir_bin(ii).name);
@@ -1780,6 +1781,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         rmdir (obj.save_path)
                         return
                     elseif strcmp(answer,'No')
+                        ii = ii + 1; % update while loop
                         continue
                     end
                     
@@ -1788,6 +1790,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     save_var = str2double(user_input{1});
                     
                     if save_var == 0
+                        ii = ii + 1; % update while loop
                         continue
                         
                     elseif save_var == 1
@@ -1797,10 +1800,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                             % reset vars
                             close(f)
                             save_var = 0;
-                            ii  = ii -1;
-                            continue
+                            continue % do not update while loop
                         end
-                        
                     end
                 end            
             
@@ -1810,12 +1811,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 exp_name = fullfile(obj.raw_psd_user,erase(lfp_dir_mat(ii).name,'.mat'));
                 % separate conditions
                 obj.separate_psd(power_matrix,exp_name,strsplit(user_input{2},';'),com_time,obj.dur)
-                close
+                close(f)
             end
             
             % update progress bar
             progressbar( ii/length(lfp_dir_bin), [])
-        
+            ii = ii + 1; % update while loop
             end
         
             % save psd_object
