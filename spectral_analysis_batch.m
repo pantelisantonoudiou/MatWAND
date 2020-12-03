@@ -1765,7 +1765,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 title(strrep(erase(lfp_dir_mat(ii).name,'.mat'),'_',' '))
                 
                 % get user input for data analysis
-                user_input = obj.separate_conds(com_time,cond_list{1});
+                user_input = obj.separate_conds(com_time, cond_list{2});
                 
                 % check that user input has the correct format
                 if isempty(user_input)
