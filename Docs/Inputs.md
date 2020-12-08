@@ -6,17 +6,17 @@ Therefore the inputs need to be structured in one of two following formats in or
 # a) .mat files containing the raw traces
 Input structure is a .mat file that contains:
 
-    i) data: vector containing the raw voltage trace for all channels
+    data: vector containing the raw voltage trace for all channels
 
-    ii) samplerate: numerical variable/vector containing the sampling rate per second for each channel
+    samplerate: numerical variable/vector containing the sampling rate per second for each channel
 
-    iii) datastart: numerical variable/vector containing the start time(s) for each channel (in samples)
+    datastart: numerical variable/vector containing the start time(s) for each channel (in samples)
 
-    iv)  dataend: numerical variable/vector containing the end time(s) for each channel (in samples)
+    dataend: numerical variable/vector containing the end time(s) for each channel (in samples)
 
     -Optional-
 
-    v) For automatic sepration of files based on conditions please include:
+    For automatic sepration of files based on conditions please include:
 
     i) comments in a Rectangular Character Array called `comtext`
 
