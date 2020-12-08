@@ -3,7 +3,7 @@ MatWAND was originally designed to process data saved from labchart into matlab 
 
 Therefore the inputs need to be structured in one of two following formats in order to be processed by MatWAND.
 
-# a) .mat files containing the raw traces
+## a) .mat files containing the raw traces
 Input structure is a .mat file that contains:
 
     data: vector containing the raw voltage trace for all channels
@@ -25,11 +25,13 @@ Input structure is a .mat file that contains:
 
 You can find an example **[<< Here](/examples)**
 
+---
 
-# b) .binary files
+## b) .binary files
 The binary files contain only the data in raw voltage trace. Any of the following file formats can be used (supported by matlab memmap function https://www.mathworks.com/help/matlab/ref/memmapfile.html)
 
     'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'single', 'double'
 
+---
 
 **[<< Back to Main Page](/README.md)**
