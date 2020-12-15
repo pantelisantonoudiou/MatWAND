@@ -7,15 +7,15 @@ a) Main class --> Spectral_Analysis_batch.m
 
 b) Helper sciprts -->
 
-                      inputmod.m - Author : The MathWorks, Inc.
+  - inputmod.m - Author : The MathWorks, Inc.
+  
+  - smooth_v1.m - MATLABs 2018 smooth function
 
-                      inputsdlg.m - Author: Kesh Ikuma
+  - [inputsdlg.m](https://www.mathworks.com/matlabcentral/fileexchange/25862-inputsdlg-enhanced-input-dialog-box) - Author: Kesh Ikuma
 
-                      mysigstar.m - Author: Anne Urai
+  - [mysigstar.m](https://github.com/anne-urai/Tools/blob/master/plotting/mysigstar.m) - Author: Anne Urai
 
-                      progressbar.m - Author: Steve Hoelzer
-
-                      smooth_v1.m - MATLABs 2018 smooth function
+  - [progressbar.m](https://www.mathworks.com/matlabcentral/fileexchange/6922-progressbar) - Author: Steve Hoelzer
                       
 c) Main application --> batch_LFP_analysis.mIapp
 
