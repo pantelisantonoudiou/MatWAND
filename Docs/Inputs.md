@@ -1,7 +1,7 @@
 # Inputs
-MatWAND was originally designed to process data saved from labchart into matlab and adibin files.
+MatWAND was originally designed to process data saved from labchart into matlab files.
 
-Therefore the inputs need to be structured in one of two following formats in order to be processed by MatWAND.
+The inputs need to be structured in one of two following formats in order to be processed by MatWAND.
 
 ## a) .mat files containing the raw traces
 Input structure is a .mat file that contains:
@@ -16,7 +16,7 @@ Input structure is a .mat file that contains:
 
     -Optional-
 
-    For automatic sepration of files based on conditions please include:
+    For automatic separation of files based on conditions please include:
 
     i) comments in a Rectangular Character Array called `comtext`
 
