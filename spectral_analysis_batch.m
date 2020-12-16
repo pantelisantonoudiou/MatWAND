@@ -489,6 +489,62 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
         end
         
+        % fft analysis with window function func
+        function power_matrix = stft(input_wave, winsize, F1, F2, Fs, func)
+            % power_matrix = stft(input_wave,winsize,F1,F2,Fs)
+            % outputs = power_matrix
+            % inputs = input_wave,winsize,F1,F2,Fs
+            
+            % Spectrogram settings:
+            overlap = round(winsize/2);
+            
+            % create hanning window
+            winvec = func(winsize);
+            
+            % ensure that input matches vector format of hann window
+            if isrow(input_wave) == 1
+                input_wave = input_wave';
+            end
+            
+            % get correct channel length for analysis
+            channel_length = length(input_wave)-(rem(length(input_wave), overlap));
+            input_wave = input_wave(1:channel_length);
+            
+            % PAD start and end
+            input_wave = vertcat(input_wave(1: overlap), input_wave, input_wave(end + 1 - overlap :end));
+            
+            % preallocate waves
+            power_matrix = zeros(F2 - F1+1, round(length(input_wave)/overlap)-2);
+            
+            % removes dc component
+            input_wave = input_wave - mean(input_wave);
+            
+            % initialise counter
+            Cntr = 1;
+            for i = 1:overlap:length(input_wave)-winsize % loop through signal segments with overlap
+
+                % get segment
+                signal = input_wave(i:i+winsize-1);
+                
+                % multiply the fft by hanning window
+                signal = signal.*winvec;
+                
+                % get normalised power spectral density
+                xdft = (abs(fft(signal)).^2);
+                xdft = 2*xdft*(1/(Fs*length(signal)));
+                
+                % 2 .* to conserve energy across
+                psdx = xdft((1:length(xdft)/2+1));
+                
+                % save power spectral density over time
+                power_matrix(:,Cntr)= psdx(F1:F2);
+                
+                % increase counter
+                Cntr = Cntr+1;
+            end
+            
+        end
+        
         % remove outliers that are x bigger than median of peak_power
         function [input,out_vector] = remove_outliers(input,median_mult)
             % input = remove_outliers(input,median_mult)
@@ -577,11 +633,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             end
         end
         
-        % multiple fft choices and functions --- needs completion
-        function choose_psd(choice)
-            % welch
-            %             tic;[pxx,f] = pwelch(data,5*samplerate,2.5*samplerate,[1:0.2:100],samplerate);toc
-        end
     end
     
     methods(Access = public, Static) % C - User related %
@@ -1150,6 +1201,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             obj.desktop_path = cd;
             obj.desktop_path = obj.desktop_path(1:strfind( obj.desktop_path,'Documents')-1);
             obj.desktop_path = fullfile( obj.desktop_path,'Desktop\');
+            
+%             addpath(fullfile(pwd,'helper'))            
         end
         
         % update object properies
@@ -1166,7 +1219,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             obj.set_array.end_time = 12; % app.Analysis_Duration_2.Value; % end time for file analysis
             
             obj.set_array.fft_window_type = 'Hann'; %app.WindowTypeDropDown.Value; % spectral window type
-            obj. set_array.fft_overlap = 50; % app.OverlapEditField.Value; % percentage overlap for fft window segments
+            obj.set_array.fft_overlap = 50; % app.OverlapEditField.Value; % percentage overlap for fft window segments
             obj.set_array.fft_windowsz = 5; % app.SizesecEditField.Value; % duration (seconds) of fft window
         end
         
@@ -1548,7 +1601,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     output = data(datastart(obj.channel_No,curr_block): dataend(obj.channel_No,curr_block));
                     
                     % obtain power matrix
-                    power_matrix = obj.fft_hann(output,obj.winsize,obj.F1,obj.F2,obj.Fs);
+                    power_matrix = obj.stft(output, obj.winsize, obj.F1, obj.F2, obj.Fs, eval(['@' obj.fft_window_type]));
                     
                     % get time index
                     [~,L] = size(power_matrix);
@@ -1968,7 +2021,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         %%% Automatic Separation %%%
         
-        % extract power matrix from mat file (files not separated)
+        % extract power matrix from mat file (files separated to conditions by user)
         function extract_pmatrix_mat(obj)
             
             % create analysis folder
@@ -2006,7 +2059,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 output = data(datastart(obj.channel_No,obj.block_number): dataend(obj.channel_No,obj.block_number));
                 
                 % obtain power matrix
-                power_matrix = obj.fft_hann(output,obj.winsize,obj.F1,obj.F2,obj.Fs);%#ok
+                power_matrix = obj.stft(output, obj.winsize, obj.F1, obj.F2, obj.Fs, eval(['@' obj.fft_window_type]));%#ok
                 save(fullfile(obj.raw_psd_user,lfp_dir(i).name),'power_matrix')
                 
                 % update progress bar
@@ -2018,7 +2071,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             save(fullfile(obj.save_path,'psd_object.mat'),'psd_object');
         end
         
-        % extract power matrix from bin file (files not separated)
+        % extract power matrix from bin file (files separated to conditions by user)
         function extract_pmatrix_bin(obj)
             % create analysis folder
             make_analysis_dir(obj)
@@ -2084,6 +2137,96 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     
                     % update progress bar
                     progressbar( [], i/(obj.Nperiods-obj.start_time))
+                end
+                
+                % save power matrix per experiment
+                save(fullfile(obj.raw_psd_path,erase(lfp_dir(ii).name,['.' obj.set_array.ext])),'power_matrix')
+                
+                % update progress bar
+                progressbar( ii/length(lfp_dir), [])
+            end
+            
+            %save psd_object
+            psd_object = saveobj(obj);%#ok
+            save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
+            
+        end
+        
+        % extract power matrix from bin file (files separated to conditions by user)
+        function extract_pmatrix_bin_all(obj)
+            % create analysis folder
+            make_analysis_dir(obj)
+            
+            % get lfp directory
+            lfp_dir = dir(fullfile(obj.lfp_data_path,['*.' obj.set_array.ext]));
+            
+            % get winsize
+            obj.winsize = round(obj.Fs*obj.dur);
+            
+            % get index values of frequencies
+            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); % lower boundary
+            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut);% upper boundary
+            
+            % get epoch in samples
+            epoch = obj.period_dur * 60 * obj.Fs;
+            
+            %initialise progress bar
+            progressbar('Total', 'Exp')
+            
+            % loop through experiments and perform fft analysis
+            for ii = 1:length(lfp_dir)
+                
+                % get file path
+                Full_path = fullfile(obj.lfp_data_path, lfp_dir(ii).name);
+                
+                % set data starting point for analysis
+                data_start = obj.set_array.start_time * epoch;
+                
+                % initalise power matrix
+                power_matrix = [];
+                
+                % map the whole file to memory
+                m = memmapfile(Full_path,'Format',obj.set_array.file_format);
+                
+                % get file length for one channel and clear memmap
+                len = length(m.Data)/obj.Tchannels; clear m;
+                loop_n = floor(len/epoch);
+                
+                for i = obj.start_time:loop_n % loop across total number of periods
+                    
+                    % update data_end
+                    if i == obj.start_time
+                        data_end = data_start + epoch;
+                    elseif i == loop_n
+                        data_end = len;
+                    else  % get back winsize
+                        data_end = data_start + epoch + obj.winsize/2;
+                    end
+                    
+                    % map the whole file to memory
+                    m = memmapfile(Full_path,'Format',obj.set_array.file_format);
+                    
+                    % get part of the channel
+                    OutputChannel = double(m.Data(data_start*obj.Tchannels+obj.channel_No : obj.Tchannels ...
+                        : data_end*obj.Tchannels));
+                    
+                    % clear  memmap object
+                    clear m;
+                    
+                    % set correct units to Volts
+                    OutputChannel = OutputChannel/obj.set_array.norm;
+                    
+                    % obtain power matrix
+                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
+                    
+                    % concatenate power matrix
+                    power_matrix  = [power_matrix, power_matrix_single];
+                    
+                    % update data start
+                    data_start = data_start + epoch - obj.winsize/2;
+                    
+                    % update progress bar
+                    progressbar( [], i/(loop_n-obj.start_time))
                 end
                 
                 % save power matrix per experiment
@@ -3193,8 +3336,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get exp list
             exp_list = obj.get_exp_array(mat_dir,obj.condition_id,strct1.removeNans);
-            
-            
+                   
             % get size of condition list
             [exps, conds] = size(exp_list);
             
