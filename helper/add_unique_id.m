@@ -1,9 +1,9 @@
 % get file path
 % -> file_path = 'C:\Users\panton01\Desktop\paper_data\sgGabrd\raw_data_bla';
 % -> add_unique_id(file_path,'.mat')
-function add_unique_id(file_path,ext)
+function add_unique_id(file_path, ext)
 % add_unique_id(file_path,ext)
-% add_unique_id(file_path,'.mat') or add_unique_id([],'.mat')
+% add_unique_id(file_path,'.mat') or add_unique_id([],'.mat'); add_unique_id([],'.adibin')
 
 if  isempty(file_path) % if file path get user dir
     file_path = uigetdir();

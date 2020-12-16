@@ -1202,7 +1202,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             obj.desktop_path = obj.desktop_path(1:strfind( obj.desktop_path,'Documents')-1);
             obj.desktop_path = fullfile( obj.desktop_path,'Desktop\');
             
-%             addpath(fullfile(pwd,'helper'))            
+            % add helper path
+            addpath(fullfile(pwd,'helper'))            
         end
         
         % update object properies
