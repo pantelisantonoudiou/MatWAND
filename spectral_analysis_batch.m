@@ -73,7 +73,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % for multichannel long recordings
         Tchannels = 3; % channels per file
-        Nperiods = 12; % in hours
+%         Nperiods = 12; % in hours
         start_time = 0 % in hours
         period_dur = 60; % in minutes  % sets blocks to be analysed from binary files
         
@@ -96,7 +96,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         analysed_range
         
         % fft separation table
-        box_or_table= 'box_plot'; % table OR box_plot
+        box_or_table= 'table'; % table OR box_plot
         
         % psd processing variables
         norm_var = 'no'; % log(10), log(e), max_val
@@ -371,7 +371,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % get unique conditions from cell array
-        function unique_conds = isolate_condition(explist, nfromlast)
+        function unique_conds = isolate_condition_old(explist, nfromlast)
             % unique_conds = isolate_condition(explist,nfromlast)
             
             % isolate_condition(list,nfromlast)
@@ -380,6 +380,23 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                % get condition
                k = strfind(explist{i},'_');
                templist{i} = explist{i}(k(end-nfromlast)+1:end);
+            end
+            
+            % get unique conditions
+            unique_conds = unique(templist);
+            unique_conds = erase(unique_conds,'.mat');
+        end
+        
+        % get unique conditions from cell array
+        function unique_conds = isolate_condition(explist)
+            % unique_conds = isolate_condition(explist)
+            
+            % isolate_condition(list,nfromlast)
+            for i = 1:length(explist)
+               
+               % get condition
+               k = strfind(explist{i},'_');
+               templist{i} = explist{i}(k(2)+1:end);
             end
             
             % get unique conditions
@@ -401,7 +418,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             for i = 0:1 % check for one or two underscores
                 try % try to get conditions
-                    unique_conds = spectral_analysis_batch.isolate_condition({mat_dir.name},i); % get unique conditions
+                    unique_conds = spectral_analysis_batch.isolate_condition({mat_dir.name}); % get unique conditions
                 catch
                     file_correct = 0;
                     return
@@ -1216,8 +1233,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             obj.set_array.file_format = 'single'; % app.BinaryFormatEditField.Value; % file format
             obj.set_array.norm = 1; % app.NormFactorEditField.Value; % normalization factor for values (y)
             obj.set_array.samplerate = 4000; % app.SamplerateEditField.Value; % sampling rate (samples per second)
-            obj.set_array.start_time = 1; % app.Analysis_Duration.Value; % start time for file analysis
-            obj.set_array.end_time = 12; % app.Analysis_Duration_2.Value; % end time for file analysis
+%             obj.set_array.start_time = 0; % app.Analysis_Duration.Value; % start time for file analysis
+%             obj.set_array.end_time = 12; % app.Analysis_Duration_2.Value; % end time for file analysis
             
             obj.set_array.fft_window_type = 'Hann'; %app.WindowTypeDropDown.Value; % spectral window type
             obj.set_array.fft_overlap = 50; % app.OverlapEditField.Value; % percentage overlap for fft window segments
@@ -1389,7 +1406,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             exp_list = spectral_analysis_batch.cellfromstruct(mat_dir,1);
             
             try
-                unique_conds = spectral_analysis_batch.isolate_condition(exp_list,1);
+                unique_conds = spectral_analysis_batch.isolate_condition(exp_list);
             catch
                 disp('could not get unique conditions')
                 unique_conds = {'cond1';'cond2';'cond3'};
@@ -1533,7 +1550,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     
     methods % A - FFT analysis %
         
-        %%% Manual Separation %%%
+        %%% MatWAND Separation %%%
         
         % extract power matrix from mat file (files separated using comments)
         function extract_pmatrix_mat_user(obj)
@@ -1756,7 +1773,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 load(path_mat,'datastart','dataend','com','comtext')
                               
                 % set data starting point for analysis
-                data_start = obj.set_array.start_time * epoch;
+                data_start = obj.start_time * epoch;
                 
                 % initalise power matrix
                 power_matrix = [];
@@ -1880,12 +1897,160 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             close all;
         end
         
+        %%% Already Separated by User %%%
+        
+        % extract power matrix from mat file (files separated to conditions by user)
+        function extract_pmatrix_mat(obj)
+            
+            % create analysis folder
+            make_analysis_dir(obj);
+            
+            % make raw psd folder (before time separation)
+            obj.raw_psd_user =  fullfile(obj.raw_psd_path,'raw_psd_user');
+            mkdir(obj.raw_psd_user);
+            
+            % get lfp directory
+            lfp_dir = dir(fullfile(obj.lfp_data_path,'*.mat'));
+            
+            % Get Fs
+            Full_path = fullfile(obj.lfp_data_path, lfp_dir(1).name);
+            load(Full_path,'samplerate')
+            obj.Fs = samplerate(obj.channel_No);
+            
+            % get winsize
+            obj.winsize = round(obj.Fs*obj.dur);
+            
+            % get index values of frequencies
+            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); % lower boundary
+            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut); % upper boundary
+            
+            % initialise progress bar
+            progressbar('Progress')
+            
+            % loop through experiments and perform fft analysis
+            for i = 1:length(lfp_dir)
+                % load file
+                Full_path = fullfile(obj.lfp_data_path, lfp_dir(i).name);
+                load(Full_path,'data','datastart','dataend')
+                
+                % get data on desired channel and block
+                output = data(datastart(obj.channel_No,obj.block_number): dataend(obj.channel_No,obj.block_number));
+                
+                % obtain power matrix
+                power_matrix = obj.stft(output, obj.winsize, obj.F1, obj.F2, obj.Fs, eval(['@' obj.fft_window_type]));%#ok
+                save(fullfile(obj.raw_psd_user,lfp_dir(i).name),'power_matrix')
+                
+                % update progress bar
+                progressbar(i/length(lfp_dir))
+            end
+            
+            % save psd_object
+            psd_object = saveobj(obj);%#ok
+            save(fullfile(obj.save_path,'psd_object.mat'),'psd_object');
+        end
+        
+        % extract power matrix from bin file (files separated to conditions by user)
+        function extract_pmatrix_bin(obj)
+            % create analysis folder
+            make_analysis_dir(obj)
+            
+            % make raw psd folder (before time separation)
+            obj.raw_psd_user =  fullfile(obj.raw_psd_path,'raw_psd_user');
+            mkdir(obj.raw_psd_user);
+            
+            % get lfp directory
+            lfp_dir = dir(fullfile(obj.lfp_data_path,['*.' obj.set_array.ext]));
+            
+            % get winsize
+            obj.winsize = round(obj.Fs*obj.dur);
+            
+            % get index values of frequencies
+            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); % lower boundary
+            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut);% upper boundary
+            
+            % get epoch in samples
+            epoch = obj.period_dur * 60 * obj.Fs;
+            
+            %initialise progress bar
+            progressbar('Total', 'Exp')
+            
+            % loop through experiments and perform fft analysis
+            for ii = 1:length(lfp_dir)
+                
+                % get file path
+                Full_path = fullfile(obj.lfp_data_path, lfp_dir(ii).name);
+                
+                % set data starting point for analysis
+                data_start = obj.start_time * epoch;
+                
+                % initalise power matrix
+                power_matrix = [];
+                
+                % map the whole file to memory
+                m = memmapfile(Full_path,'Format',obj.set_array.file_format);
+                
+                % get file length for one channel and clear memmap
+                len = length(m.Data)/obj.Tchannels; clear m;
+                loop_n = floor(len/epoch);
+                
+                for i = obj.start_time:loop_n % loop across total number of periods
+                    
+                    % update data_end
+                    if i == obj.start_time
+                        data_end = data_start + epoch;
+                    elseif i == loop_n
+                        data_end = len;
+                    else  % get back winsize
+                        data_end = data_start + epoch + obj.winsize/2;
+                    end
+                    
+                    % map the whole file to memory
+                    m = memmapfile(Full_path,'Format',obj.set_array.file_format);
+                    
+                    % get part of the channel
+                    OutputChannel = double(m.Data(data_start*obj.Tchannels+obj.channel_No : obj.Tchannels ...
+                        : data_end*obj.Tchannels));
+                    
+                    % clear  memmap object
+                    clear m;
+                    
+                    % set correct units to Volts
+                    OutputChannel = OutputChannel/obj.set_array.norm;
+                    
+                    % obtain power matrix
+                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
+                    
+                    % concatenate power matrix
+                    power_matrix  = [power_matrix, power_matrix_single];
+                    
+                    % update data start
+                    data_start = data_start + epoch - obj.winsize/2;
+                    
+                    % update progress bar
+                    progressbar( [], i/(loop_n-obj.start_time))
+                end
+                
+                % save power matrix per experiment
+                save(fullfile(obj.raw_psd_user,erase(lfp_dir(ii).name,['.' obj.set_array.ext])),'power_matrix')
+                
+                % update progress bar
+                progressbar( ii/length(lfp_dir), [])
+            end
+            
+            % save psd_object
+            psd_object = saveobj(obj);%#ok
+            save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
+            
+        end
+        
+        %%% Consistent Time Separation %%%
+        
         % consistent time separation across conditions and experiments
         function file_split_by_time(obj)
             % file_split_by_time(obj)
             
             % make all zeros except baseline to 1
-            cond_time = obj.cond_orig_sep_time;
+            cond_time = round(obj.cond_orig_sep_time); % in minutes
             
             % get separation vector
             cond_time = (cond_time * 60) / (obj.dur/2); % convert to blocks
@@ -1944,15 +2109,42 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % time_locked_separation
-        function time_locked_separation(obj)
-            % time_locked_separation(obj)
+        function cancelled = time_locked_trim(obj)
+            % cancelled = time_locked_trim(obj)
             
             f = figure(); % init figure
-            lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat')); % get lfp files
-            unique_conds = spectral_analysis_batch.isolate_condition({lfp_dir.name},1); % get unique conditions
-            exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,1); % get exp list
             
-            if strcmp(obj.box_or_table,'table') == 1
+            % get power_matrix files files
+            lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
+            
+            % get unique conditions
+            unique_conds = spectral_analysis_batch.isolate_condition({lfp_dir.name});
+            
+            % get exp list
+            exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,1);
+
+            if strcmp(obj.box_or_table,'box_plot') == 1
+                %%% get experiment duration %%%
+                
+                % create duration list
+                dur_list = zeros(size(exp_list));
+                
+                % get size of condition list
+                [exps, conds] = size(exp_list);
+                
+                for i = 1:exps % loop through experiments
+                    for ii = 1:conds % loop through conditions
+                        load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
+                        dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2)/60; % get in minutes
+                    end
+                end
+                
+                % plot boxplot
+                boxplot(dur_list,'Labels',unique_conds,'color', [0 ,0, 0]);
+                ylabel('Duration - Minutes')
+                ax1 = gca; spectral_analysis_batch.prettify_o(ax1)
+                
+            elseif strcmp(obj.box_or_table,'table') == 1
                 
                 % init list
                 the_list = cell(length(lfp_dir),2);
@@ -1972,33 +2164,24 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     the_list{ii,1} = exp_list{ii};
                     
                     % get duration
-                    the_list{ii,2} = len*(obj.dur/2)/60;
+                    the_list{ii,2} = len*(obj.dur/2);% in seconds
                 end
-                
-                colnames = {'Exp-Name', 'Exp_Length_mins'};
-                exp_table = cell2table(the_list,'VariableNames', {'Exp_Name' 'Exp_Length_mins'});
-                uitable(f, 'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
-                
-            elseif strcmp(obj.box_or_table,'box_plot') == 1
-                
-                % create duration list
-                dur_list = zeros(size(exp_list));
-                
-                % get size of condition list
-                [exps, conds] = size(exp_list);
-                
-                for i = 1:exps % loop through experiments
-                    for ii = 1:conds % loop through conditions
-                        load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
-                        dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2)/60; % get in minutes
-                    end
-                end
-                
-                boxplot(dur_list,'Labels',unique_conds,'color', [0 ,0, 0]);
-                % spectral_analysis_batch.dot_plot(dur_list',unique_conds,1,0,[0.5 0.5 0.5 ;0 0 0])
-                ylabel('Duration - Minutes')
-                ax1 = gca; spectral_analysis_batch.prettify_o(ax1)
             end
+            
+            % set time format according to experiment duration
+            display.str = 'min';
+            display.time = 60;
+            if  median( [the_list{:,2}])>3*60*60
+                display.str = 'hour';
+                display.time = 60*60;
+            end
+            
+            the_list(:,2) = num2cell([the_list{:,2}]/display.time);
+            
+            % get column name and display table
+            colnames = {'Exp-Name', horzcat('Exp_Length_', display.str)};
+            %                 exp_table = cell2table(the_list,'VariableNames', horzcat('Exp_Length_', display_time));
+            uitable(f, 'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
             
             % wait for user to close
             uiwait(f);
@@ -2008,241 +2191,21 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             nums = mat2str(zeros(1,length(unique_conds)*2));nums(end)=[];nums(1)=[];
             
             % get user input
-            prompt = {'Conditions (separated by ;) :',' Condition duration - mins (space separated) :'};
+            prompt = {'Conditions (separated by ;) :', horzcat('Condition duration ', display.str, ' (space separated) :')};
             Prompt_title = 'Input'; dims = [1 35];
-            definput = {strjoin(unique_conds,';'),nums};%'-5 -0 0 8'
+            definput = {strjoin(unique_conds,';'), nums};
             answer = inputmod(prompt,Prompt_title,dims,definput);
             
             if isempty(answer) == 0 % proceed only if user clicks ok
-                obj.condition_id = strsplit(answer{1},';');
-                obj.cond_orig_sep_time = str2num(answer{2});
+                obj.condition_id = strsplit(answer{1},';'); % get conditions
+                obj.cond_orig_sep_time = str2num(answer{2}) / (display.time/60); % convert to minutes
                 file_split_by_time(obj);
+                cancelled = 0;
+            else
+                cancelled = 1;
+                return
             end
         end
-        
-        %%% Automatic Separation %%%
-        
-        % extract power matrix from mat file (files separated to conditions by user)
-        function extract_pmatrix_mat(obj)
-            
-            % create analysis folder
-            make_analysis_dir(obj);
-            
-            % make raw exvivo folder
-            obj.raw_psd_user =  fullfile(obj.raw_psd_path,'raw_psd_user'); % ['raw_psd_user_' obj.channel_struct{obj.channel_No}]
-            mkdir(obj.raw_psd_user);
-            
-            % get lfp directory
-            lfp_dir = dir(fullfile(obj.lfp_data_path,'*.mat'));
-            
-            % Get Fs
-            Full_path = fullfile(obj.lfp_data_path, lfp_dir(1).name);
-            load(Full_path,'samplerate')
-            obj.Fs = samplerate(obj.channel_No);
-            
-            % get winsize
-            obj.winsize = round(obj.Fs*obj.dur);
-            
-            % get index values of frequencies
-            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); % lower boundary
-            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut); % upper boundary
-            
-            % initialise progress bar
-            progressbar('Progress')
-            
-            % loop through experiments and perform fft analysis
-            for i = 1:length(lfp_dir)
-                % load file
-                Full_path = fullfile(obj.lfp_data_path, lfp_dir(i).name);
-                load(Full_path,'data','datastart','dataend')
-                
-                % get data on desired channel and block
-                output = data(datastart(obj.channel_No,obj.block_number): dataend(obj.channel_No,obj.block_number));
-                
-                % obtain power matrix
-                power_matrix = obj.stft(output, obj.winsize, obj.F1, obj.F2, obj.Fs, eval(['@' obj.fft_window_type]));%#ok
-                save(fullfile(obj.raw_psd_user,lfp_dir(i).name),'power_matrix')
-                
-                % update progress bar
-                progressbar(i/length(lfp_dir))
-            end
-            
-            % save psd_object
-            psd_object = saveobj(obj);%#ok
-            save(fullfile(obj.save_path,'psd_object.mat'),'psd_object');
-        end
-        
-        % extract power matrix from bin file (files separated to conditions by user)
-        function extract_pmatrix_bin(obj)
-            % create analysis folder
-            make_analysis_dir(obj)
-            
-            % get lfp directory
-            lfp_dir = dir(fullfile(obj.lfp_data_path,['*.' obj.set_array.ext]));
-            
-            % get winsize
-            obj.winsize = round(obj.Fs*obj.dur);
-            
-            % get index values of frequencies
-            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); % lower boundary
-            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut);% upper boundary
-            
-            % get epoch in samples
-            epoch = obj.period_dur * 60 * obj.Fs;
-            
-            %initialise progress bar
-            progressbar('Total', 'Exp')
-            
-            % loop through experiments and perform fft analysis
-            for ii = 1:length(lfp_dir)
-                
-                % get file path
-                Full_path = fullfile(obj.lfp_data_path, lfp_dir(ii).name);
-                
-                % set data starting point for analysis
-                data_start = obj.set_array.start_time * epoch;
-                
-                % initalise power matrix
-                power_matrix = [];
-                
-                for i = obj.start_time:obj.Nperiods % loop across total number of periods
-                    
-                    % update data_end
-                    if i == obj.start_time
-                        data_end = data_start + epoch;
-                    else  % get back winsize
-                        data_end = data_start + epoch + obj.winsize/2;
-                    end
-                    
-                    % map the whole file to memory
-                    m = memmapfile(Full_path,'Format',obj.set_array.file_format);
-                    
-                    % get part of the channel
-                    OutputChannel = double(m.Data(data_start*obj.Tchannels+obj.channel_No : obj.Tchannels ...
-                        : data_end*obj.Tchannels));
-                    
-                    % clear  memmap object
-                    clear m;
-                    
-                    % set correct units to Volts
-                    OutputChannel = OutputChannel/obj.set_array.norm;
-                    
-                    % obtain power matrix
-                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
-                    
-                    % concatenate power matrix
-                    power_matrix  = [power_matrix, power_matrix_single];
-                    
-                    % update data start
-                    data_start = data_start + epoch - obj.winsize/2;
-                    
-                    % update progress bar
-                    progressbar( [], i/(obj.Nperiods-obj.start_time))
-                end
-                
-                % save power matrix per experiment
-                save(fullfile(obj.raw_psd_path,erase(lfp_dir(ii).name,['.' obj.set_array.ext])),'power_matrix')
-                
-                % update progress bar
-                progressbar( ii/length(lfp_dir), [])
-            end
-            
-            %save psd_object
-            psd_object = saveobj(obj);%#ok
-            save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
-            
-        end
-        
-        % extract power matrix from bin file (files separated to conditions by user)
-        function extract_pmatrix_bin_all(obj)
-            % create analysis folder
-            make_analysis_dir(obj)
-            
-            % get lfp directory
-            lfp_dir = dir(fullfile(obj.lfp_data_path,['*.' obj.set_array.ext]));
-            
-            % get winsize
-            obj.winsize = round(obj.Fs*obj.dur);
-            
-            % get index values of frequencies
-            obj.F1 = obj.getfreq(obj.Fs,obj.winsize,obj.LowFCut); % lower boundary
-            obj.F2 = obj.getfreq(obj.Fs,obj.winsize,obj.HighFCut);% upper boundary
-            
-            % get epoch in samples
-            epoch = obj.period_dur * 60 * obj.Fs;
-            
-            %initialise progress bar
-            progressbar('Total', 'Exp')
-            
-            % loop through experiments and perform fft analysis
-            for ii = 1:length(lfp_dir)
-                
-                % get file path
-                Full_path = fullfile(obj.lfp_data_path, lfp_dir(ii).name);
-                
-                % set data starting point for analysis
-                data_start = obj.set_array.start_time * epoch;
-                
-                % initalise power matrix
-                power_matrix = [];
-                
-                % map the whole file to memory
-                m = memmapfile(Full_path,'Format',obj.set_array.file_format);
-                
-                % get file length for one channel and clear memmap
-                len = length(m.Data)/obj.Tchannels; clear m;
-                loop_n = floor(len/epoch);
-                
-                for i = obj.start_time:loop_n % loop across total number of periods
-                    
-                    % update data_end
-                    if i == obj.start_time
-                        data_end = data_start + epoch;
-                    elseif i == loop_n
-                        data_end = len;
-                    else  % get back winsize
-                        data_end = data_start + epoch + obj.winsize/2;
-                    end
-                    
-                    % map the whole file to memory
-                    m = memmapfile(Full_path,'Format',obj.set_array.file_format);
-                    
-                    % get part of the channel
-                    OutputChannel = double(m.Data(data_start*obj.Tchannels+obj.channel_No : obj.Tchannels ...
-                        : data_end*obj.Tchannels));
-                    
-                    % clear  memmap object
-                    clear m;
-                    
-                    % set correct units to Volts
-                    OutputChannel = OutputChannel/obj.set_array.norm;
-                    
-                    % obtain power matrix
-                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
-                    
-                    % concatenate power matrix
-                    power_matrix  = [power_matrix, power_matrix_single];
-                    
-                    % update data start
-                    data_start = data_start + epoch - obj.winsize/2;
-                    
-                    % update progress bar
-                    progressbar( [], i/(loop_n-obj.start_time))
-                end
-                
-                % save power matrix per experiment
-                save(fullfile(obj.raw_psd_path,erase(lfp_dir(ii).name,['.' obj.set_array.ext])),'power_matrix')
-                
-                % update progress bar
-                progressbar( ii/length(lfp_dir), [])
-            end
-            
-            %save psd_object
-            psd_object = saveobj(obj);%#ok
-            save (fullfile(obj.save_path,'psd_object.mat'),'psd_object')
-            
-        end
-        
         
         %%% --------------------------------------------------------------- %%%
         
@@ -2284,11 +2247,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 if obj.outlier_var ~= -1
                     [proc_matrix,~]  = remove_outliers_pmatrix(obj,proc_matrix,freq,obj.LowFCut,obj.HighFCut);
                 end
-                
-%                 % detect nans after filling
-%                 if any(any(isnan(proc_matrix))) ==1
-%                     disp(i)
-%                 end
                 
                 %2%%  remove noise from data %%%
                 if obj.noise_var ~= -1
