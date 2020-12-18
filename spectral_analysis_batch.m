@@ -594,12 +594,12 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % extract power area, peak power and peak freq
-        function [Peak,peak_freqx,p_area] = psd_parameters(psd_raw,freqx) % ,peak_width
+        function [Peak,peak_freqx,p_area] = psd_parameters(psd_raw, freqx, win) % ,peak_width
             %%[Peak,peak_freqx,p_area]= psd_parameters(psd_raw,freqx)
             % input parameters are PSD and frequency vectors
             
-            % smooth psd curve (smooth factor of 5)
-            smth_psd = smooth_v1(psd_raw,5);
+            % smooth psd curve (smooth factor = window size in seconds)
+            smth_psd = smooth_v1(psd_raw, win);
             
             % find peak power and index at which the peak power occurs
             [Peak, x_index] = max(smth_psd);
@@ -2337,7 +2337,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             for i = 1:L %loop through psd bins
                 [peak,peak_freqx,p_area]= obj.psd_parameters(power_matrix(freq_range(1):freq_range(2),i),...
-                    freq(freq_range(1):freq_range(2)));
+                    freq(freq_range(1):freq_range(2)), obj.dur);
                 peak_power(i) = peak;
                 peak_freq(i) = peak_freqx;
                 power_area(i) = p_area;
@@ -3123,7 +3123,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         mean_psd = mean(proc_matrix(Flow:Fhigh,:),2);
                         
                         % get parameters from each experiment
-                        [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd,freqx);
+                        [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd, freqx, obj.dur);
                         
                         extr_feature(ii,i) = psd_prm(strct1.par_var);
                     else
@@ -3215,9 +3215,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         
                         % get parameters from each experiment
                         [psd_prmA(1),psd_prmA(2),psd_prmA(3)] = obj.psd_parameters(mean(proc_matrix(f_range(1):f_range(2),:),2)...
-                            ,freq(f_range(1):f_range(2)));
+                            ,freq(f_range(1):f_range(2)), obj.dur);
                         [psd_prmB(1),psd_prmB(2),psd_prmB(3)] = obj.psd_parameters(mean(proc_matrix(f_range(3):f_range(4),:)...
-                            ,2),freq(f_range(3):f_range(4)));
+                            ,2),freq(f_range(3):f_range(4)), obj.dur);
                         
                         extr_feature(ii,i) = psd_prmA(strct1.par_var)/psd_prmB(strct1.par_var);
                     else
@@ -3462,7 +3462,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         mean_psd = mean(proc_matrix(Flow:Fhigh,:),2);
                         
                         % get parameters from each experiment
-                        [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd,freqx);
+                        [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd, freqx, obj.dur);
                         
                         extr_feature(ii,i) = psd_prm(strct1.par_var);
                     else
@@ -3526,9 +3526,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         
                         % get parameters from each experiment
                         [psd_prmA(1),psd_prmA(2),psd_prmA(3)] = obj.psd_parameters(mean(proc_matrix(f_range(1):f_range(2),:),2)...
-                            ,freq(f_range(1):f_range(2)));
+                            ,freq(f_range(1):f_range(2)), obj.dur);
                         [psd_prmB(1),psd_prmB(2),psd_prmB(3)] = obj.psd_parameters(mean(proc_matrix(f_range(3):f_range(4),:)...
-                            ,2),freq(f_range(3):f_range(4)));
+                            ,2),freq(f_range(3):f_range(4)), obj.dur);
                         
                         extr_feature(ii,i) = psd_prmA(strct1.par_var)/psd_prmB(strct1.par_var);
                     else
@@ -3616,7 +3616,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % need to add ratios to time !!!
         % Export psd parameters vs time to excel table
-        function excel_psd_time(obj,strct1,ratio)
+        function excel_psd_time(obj, strct1, ratio)
             % excel_psd_time(obj,strct1)
             % export data in excel format
             % strct1.Flow = 2  low boundary
@@ -3813,7 +3813,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         mean_psd = mean(proc_matrix(Flow:Fhigh,:),2);
                         
                         % get parameters from each experiment
-                        [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd,freqx);
+                        [psd_prm(1),psd_prm(2),psd_prm(3)] = obj.psd_parameters(mean_psd, freqx, obj.dur);
                         
                         extr_feature(ii,i) = psd_prm(strct1.par_var);
                     else
