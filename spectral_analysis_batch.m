@@ -73,7 +73,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         
         % for multichannel long recordings
         Tchannels = 3; % channels per file
-%         Nperiods = 12; % in hours
         start_time = 0 % in hours
         period_dur = 60; % in minutes  % sets blocks to be analysed from binary files
         
@@ -94,9 +93,6 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         F1 % lower freq index of extracted raw psd
         F2 % higher freq index of extracted raw psd
         analysed_range
-        
-        % fft separation table
-        box_or_table= 'table'; % table OR box_plot
         
         % psd processing variables
         norm_var = 'no'; % log(10), log(e), max_val
@@ -2046,45 +2042,48 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         %%% Consistent Time Separation %%%
         
         % consistent time separation across conditions and experiments
-        function file_split_by_time(obj)
-            % file_split_by_time(obj)
+        function excluded = file_split_by_time(obj)
+            % excluded = file_split_by_time(obj)
             
             % make all zeros except baseline to 1
             cond_time = round(obj.cond_orig_sep_time); % in minutes
             
-            % get separation vector
-            cond_time = (cond_time * 60) / (obj.dur/2); % convert to blocks
+            % get separation vector (to blocks)
+            cond_time = (cond_time * 60) / (obj.dur/2);
             
             % get mat files in load_path directory
             mat_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
             
             % separate conditions into a list
             new_array = obj.cellfromstruct(mat_dir,1);
-            cond_list =  obj.filter_list(new_array,obj.condition_id) ;
+            cond_list = obj.filter_list(new_array, obj.condition_id);
             
             % get size for each condition
             [exps, conds] = size(cond_list);
             
             % make cond time to matrix for loop configuration
             cond_time = reshape(cond_time,2,conds)';
+
+            % get settings for excluded files
+            excluded = {}; % create excluded array
+            cntr = 1; % init counter for excluded files
             
             % initialise progress bar
-            progressbar('Separating files')
+            progressbar('Separating files') 
             
-            for i = 1 : exps %loop through experiments
+            for i = 1 : exps % loop through experiments
                 
-                for ii = 1:conds %loop through condiitons
+                for ii = 1 : conds % loop through condiitons
                     
                     if isempty(cond_list{i,ii})==0 % check if file exists
                         
                         % file load
                         load(fullfile(obj.raw_psd_user , cond_list{i,ii}),'power_matrix');
-                        
-                        % get matrix size
-                        [~,len] = size(power_matrix);
-                        
-                        if (cond_time(ii,2)-cond_time(ii,1))>len % check if extracted length exceeds bounds
-                            disp(['the file' cond_list{i,ii} ' exceeds size bounds'])
+  
+                        % check if extracted length exceeds time bins
+                        if (cond_time(ii,2)-cond_time(ii,1)) > size(power_matrix, 2) 
+                            excluded{cntr} = strrep(cond_list{i,ii}, '_', ' ');
+                            cntr = cntr + 1; % update counter
                         else
                             
                             % get extracted times for each condition
@@ -2100,7 +2099,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     end
                 end
 
-                progressbar (i/exps) % update progress bar
+                progressbar((i*ii)/(exps*conds)) % update progress bar
             end
             
             % save psd_object
@@ -2112,8 +2111,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function cancelled = time_locked_trim(obj)
             % cancelled = time_locked_trim(obj)
             
-            f = figure(); % init figure
-            
+            %%% ----------------- Get experiment list ----------------- %%%
             % get power_matrix files files
             lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
             
@@ -2122,85 +2120,83 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get exp list
             exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,1);
-
-            if strcmp(obj.box_or_table,'box_plot') == 1
-                %%% get experiment duration %%%
-                
-                % create duration list
-                dur_list = zeros(size(exp_list));
-                
-                % get size of condition list
-                [exps, conds] = size(exp_list);
-                
-                for i = 1:exps % loop through experiments
-                    for ii = 1:conds % loop through conditions
-                        load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
-                        dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2)/60; % get in minutes
-                    end
-                end
-                
-                % plot boxplot
-                boxplot(dur_list,'Labels',unique_conds,'color', [0 ,0, 0]);
-                ylabel('Duration - Minutes')
-                ax1 = gca; spectral_analysis_batch.prettify_o(ax1)
-                
-            elseif strcmp(obj.box_or_table,'table') == 1
-                
-                % init list
-                the_list = cell(length(lfp_dir),2);
-                % loop through experiments and get exp name and length
-                for ii = 1:length(lfp_dir)
-                    
-                    % get file path
-                    Full_path = fullfile(obj.raw_psd_user, exp_list{ii});
-                    
-                    % map the file to memory
-                    load(Full_path,'power_matrix');
-                    
-                    % get time bins of power matrix
-                    [~,len] = size(power_matrix);
-                    
-                    % create list
-                    the_list{ii,1} = exp_list{ii};
-                    
-                    % get duration
-                    the_list{ii,2} = len*(obj.dur/2);% in seconds
+            %%% ------------------------------------------------------- %%%
+            
+            %%% -------------------- Get table data ------------------- %%%
+            
+            % create duration list
+            dur_list = zeros(size(exp_list));
+            
+            % get size of condition list
+            [exps, conds] = size(exp_list);
+            
+            for i = 1:exps % loop through experiments
+                for ii = 1:conds % loop through conditions
+                    load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
+                    dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2); % get in seconds
                 end
             end
+            
+            %%% ------------------------------------------------------- %%%
             
             % set time format according to experiment duration
             display.str = 'min';
             display.time = 60;
-            if  median( [the_list{:,2}])>3*60*60
+            if  median(dur_list(:))>3*60*60
                 display.str = 'hour';
                 display.time = 60*60;
             end
             
-            the_list(:,2) = num2cell([the_list{:,2}]/display.time);
+            % get minimum time for each condition
+            min_times = floor(min(dur_list, [], 1)/display.time);
+            
+            % create display list and columns
+            the_list = cell(exps, conds*2);
+            colnames = cell(1,conds*2);
+            for ii = 1:conds % loop through conditions
+                % get columns
+                colnames{ii*2-1} = horzcat('Exp ID - ', unique_conds{ii});
+                colnames{ii*2} = horzcat('Duration - ', display.str);
+                
+                % pass data to cell array
+                the_list(:,ii*2-1) = exp_list(:,ii);                      % get name
+                the_list(:,ii*2) = num2cell(dur_list(:,ii)/display.time); % get time
+                
+            end
             
             % get column name and display table
-            colnames = {'Exp-Name', horzcat('Exp_Length_', display.str)};
-            %                 exp_table = cell2table(the_list,'VariableNames', horzcat('Exp_Length_', display_time));
-            uitable(f, 'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
+            f = figure(); % init figure
+            uit = uitable(f,'Data', the_list, 'ColumnName', colnames,'Units', 'Normalized', 'Position',[0.1, 0.1, 0.8, 0.8]);
+%           uit.ColumnSortable = repmat([false true], [1,conds]); add in future matlab edition
+            uiwait(f); % wait for user to close
             
-            % wait for user to close
-            uiwait(f);
-            
-            % get example vector for splitting file based on unique
-            % conditions
-            nums = mat2str(zeros(1,length(unique_conds)*2));nums(end)=[];nums(1)=[];
+            % get splitting times for user
+            nums = zeros(1, conds*2); % create empty vector
+            nums(2:2:conds*2) = min_times; % add min times
+            nums = mat2str(nums); % convert to string
+            nums = nums(2:end-1); % clean string
             
             % get user input
             prompt = {'Conditions (separated by ;) :', horzcat('Condition duration ', display.str, ' (space separated) :')};
             Prompt_title = 'Input'; dims = [1 35];
             definput = {strjoin(unique_conds,';'), nums};
-            answer = inputmod(prompt,Prompt_title,dims,definput);
+            answer = inputmod(prompt, Prompt_title, dims, definput);
             
+            % set options for warning message
+            opts = struct('WindowStyle','modal', 'Interpreter','tex');
             if isempty(answer) == 0 % proceed only if user clicks ok
-                obj.condition_id = strsplit(answer{1},';'); % get conditions
-                obj.cond_orig_sep_time = str2num(answer{2}) / (display.time/60); % convert to minutes
-                file_split_by_time(obj);
                 cancelled = 0;
+                
+                obj.condition_id = strsplit(answer{1},';');                      % get conditions
+                obj.cond_orig_sep_time = str2num(answer{2}) * (display.time/60); % convert to minutes
+                
+                % separate files
+                excluded_files = file_split_by_time(obj);
+                if isempty(excluded_files) == 0
+                    warndlg(horzcat('\fontsize{11} Files excluded: size exceed bounds', ...
+                        {'-------------------------------------------------'},...
+                        excluded_files), 'Warning', opts);
+                end
             else
                 cancelled = 1;
                 return
