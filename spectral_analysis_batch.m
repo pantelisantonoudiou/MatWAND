@@ -1297,6 +1297,74 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
         end
         
+        % export times for each experiment
+        function export_exp_time(obj)
+            
+            %%% ----------------- Get experiment list ----------------- %%%
+            % get power_matrix files files
+            lfp_dir = dir(fullfile(obj.raw_psd_user,'*.mat'));
+            
+            % get unique conditions
+            unique_conds = spectral_analysis_batch.isolate_condition({lfp_dir.name});
+            
+            % get exp list
+            exp_list = spectral_analysis_batch.get_exp_array(lfp_dir,unique_conds,0);
+            %%% ------------------------------------------------------- %%%
+            
+            %%% -------------------- Get table data ------------------- %%%
+            
+            % create duration list
+            dur_list = zeros(size(exp_list));
+            
+            % get size of condition list
+            [exps, conds] = size(exp_list);
+            
+            progressbar('Progress...')
+            for i = 1:exps % loop through experiments
+                for ii = 1:conds % loop through conditions
+                    if isempty(exp_list{i,ii})==0
+                        load(fullfile(obj.raw_psd_user,exp_list{i,ii}),'power_matrix') % load pmat
+                        dur_list(i,ii) = size(power_matrix,2)*(obj.dur/2); % get in seconds
+                    else
+                        dur_list(i,ii) = 0;
+                    end
+                    progressbar((i*ii)/(exps*conds))
+                end
+                
+            end
+            
+            %%% ------------------------------------------------------- %%%
+            
+            % set time format according to experiment duration
+            display.str = 'min';
+            display.time = 60;
+            if  median(dur_list(:))>3*60*60
+                display.str = 'hour';
+                display.time = 60*60;
+            end
+            
+            % create display list and columns
+            the_list = cell(exps, conds*2);
+            colnames = cell(1,conds*2);
+            for ii = 1:conds % loop through conditions
+                % get columns
+                colnames{ii*2-1} = horzcat('Exp ID - ', unique_conds{ii});
+                colnames{ii*2} = horzcat('Duration - ', display.str);
+                
+                % pass data to cell array
+                the_list(:,ii*2-1) = exp_list(:,ii);                      % get name
+                the_list(:,ii*2) = num2cell(dur_list(:,ii)/display.time); % get time
+                
+            end
+                                
+            % merge main array with column names
+            merged_array = vertcat(colnames, the_list);
+                       
+            % save table to excel file
+            xlswrite(fullfile(obj.export_path, 'exp_duration.xlsx'), merged_array);
+
+        end
+        
         % create bin table to observe experiment length (hours)
         function [colnames, the_list,exp_table] = bin_table(obj)
             
