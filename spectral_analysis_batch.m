@@ -66,6 +66,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         % wave properties
         dur  = 5  % spectral window duration of the fft transform (in seconds)
         Fs = 4000; % sampling rate
+        fft_window_type; % window type (default = hann)
         winsize % spectral window duration in samples (depends on sampling rate)
         block_number = 1; % block
         channel_No = 1; % channel to be analyzed
@@ -1627,7 +1628,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             Prompt_title = 'Input';
             dims = [1 40];
             definput = {'2 - 80','cond1;cond2;cond3'};
-            cond_list = inputmod(prompt,Prompt_title,dims,definput);
+            cond_list = inputmod(prompt, Prompt_title, dims, definput);
             
             % get observation frequencies
             freq_range = split(cond_list{1}, '-');
@@ -1638,7 +1639,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             make_analysis_dir(obj)
             
             % make raw exvivo folder
-            obj.raw_psd_user =  fullfile(obj.raw_psd_path, 'raw_psd_user'); %['raw_psd_user_' obj.channel_struct{obj.channel_No}]
+            obj.raw_psd_user =  fullfile(obj.raw_psd_path, 'raw_psd_user');
             mkdir(obj.raw_psd_user)
             
             % get lfp directory
@@ -1874,7 +1875,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     OutputChannel = OutputChannel/obj.set_array.norm;
                     
                     % obtain power matrix
-                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
+                    power_matrix_single = obj.stft(OutputChannel, obj.winsize, obj.F1, obj.F2, obj.Fs, eval(['@' obj.fft_window_type]));
                     
                     % concatenate power matrix
                     power_matrix  = [power_matrix, power_matrix_single];
@@ -2082,8 +2083,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                     OutputChannel = OutputChannel/obj.set_array.norm;
                     
                     % obtain power matrix
-                    power_matrix_single = obj.fft_hann(OutputChannel,obj.winsize,obj.F1,obj.F2,obj.Fs);
-                    
+                    power_matrix_single = obj.stft(OutputChannel, obj.winsize, obj.F1, obj.F2, obj.Fs, eval(['@' obj.fft_window_type]));
+                 
                     % concatenate power matrix
                     power_matrix  = [power_matrix, power_matrix_single];
                     
