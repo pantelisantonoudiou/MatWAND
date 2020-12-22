@@ -1,9 +1,23 @@
-## MatWAND data processing:
+## MatWAND data processing
 
 
-Here follows a step by step tutorial on how to use MatWAND to analyze binary files from labchart.
 
-1) Load Folder Directory.
+Here follows a step by step tutorial on how to use MatWAND to analyze binary files from labchart. 
+This tutorial assumes that the LFP/EEG files have been already properly named and placed in a data folder (clock here for more info).
+
+---
+
+1) Initialize analysis.
+
+![Banner](/Images/tutorial/init.png)
+
+---
+
+2) Enter parameters
+
+![Banner](/Images/tutorial/input_parameters_gui.png)
+
+---
 
 2) Convert voltage traces to power spectral density (PSD) using the [fft transform](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html) and store to "raw_psd" folder.
 
