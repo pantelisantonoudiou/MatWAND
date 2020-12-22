@@ -13,11 +13,11 @@ This tutorial assumes that the LFP/EEG files have been already properly named an
 
 ---
 
-2) Enter parameters. 
+2) Choose file and analysis parameters. 
 
 ![Banner](/Images/tutorial/input_parameters_gui.png)
 
-In this case our files contain 3 channels each ('bla', 'pfc', 'emg') and we chose to analyze the 'bla' channel.
+In this case our files contain 3 channels each ('bla', 'pfc', 'emg'). The channel names need to be separated have to be separated with a semicolon(;) as can be seen in the 'Channel Structure' field. Here we chose to the 'bla' channel as denoted in the 'Channel Analyzed' field.
 
 We also denoted that out files are binary with .adibin extension.
 
