@@ -52,7 +52,7 @@ This tutorial assumes that the LFP/EEG binary files have been already properly n
 
 ![Banner](/Images/tutorial/fft_progress.png)
 
-- Before the conversion begins, the user is asked whether to separate files based on comments (provided in matlab files [pipeline](/Images)). 
+- Before the conversion begins, the user is asked whether to separate files based on comments (provided in matlab files [pipeline](/Images/MatWAND_pipeline.svg)). 
 
 ![Banner](/Images/tutorial/separate_conditions.png)
 
