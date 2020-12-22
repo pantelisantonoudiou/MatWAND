@@ -1,7 +1,7 @@
-## MatWAND data processing
+## MatWAND Tutorial
 
 This is a step by step tutorial on how to use MatWAND to analyze LFP/EEG binary files exported from labchart. 
-This tutorial assumes that the LFP/EEG binary files have been already properly named and placed in a data folder (clock here for more info).
+This tutorial assumes that the LFP/EEG binary files have been already properly named and placed in a data folder (click here for more info).
 
 ---
 
@@ -17,19 +17,22 @@ In this example our files contain 3 channels ('bla', 'pfc', 'emg'). The channel 
 
 ![Banner](/Images/tutorial/input_parameters_gui.png)
 
-We choose our file type from the *File Type* field. In this example we selected *adibin* as we are analyzing binary data from labchart.
+We choose our file type from the *File Type* field. The only file types currently supported are matlab and binary files. In this example we selected *adibin* as we are analyzing binary data from labchart with *single* datatype. The option *other* allows to choose the file extension, scaling and [data type](Docs/Inputs.md) of binary files.
 
 ![Banner](/Images/tutorial/file_type.png)
 
 ---
 
-3) Choose the folder where LFP/EEG binary files are present. 
+3) Choose the data folder where LFP/EEG binary files are present. 
 
-It is recommended that this folder is under a parent folder. In this example the .adibin are placed under a the parent directory *test_mat*
+It is recommended that the data folder is under a parent folder. In this example the .adibin are situated in the *raw_data* folder which is placed under the *test_mat* parent directory.
 
 ![Banner](/Images/tutorial/load_raw_data.png)
 
-If 
+After the folder is loaded a file check is run on the background to determine if the files have been named properly. 
+If the file check passes succesfully then the MatWAND status bar will show that the folder was loaded. Click here to see how to name and save files.
+
+![Banner](/Images/tutorial/load_raw_data.png)
 
 ---
 
