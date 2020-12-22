@@ -13,9 +13,15 @@ This tutorial assumes that the LFP/EEG files have been already properly named an
 
 ---
 
-2) Enter parameters
+2) Enter parameters. 
 
 ![Banner](/Images/tutorial/input_parameters_gui.png)
+
+In this case our files contain 3 channels each ('bla', 'pfc', 'emg') and we chose to analyze the 'bla' channel.
+
+We also denoted that out files are binary with .adibin extension.
+
+![Banner](/Images/tutorial/file_type.png)
 
 ---
 
