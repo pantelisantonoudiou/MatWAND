@@ -62,12 +62,19 @@ This tutorial assumes that the LFP/EEG binary files have been already properly n
 ![Banner](/Images/tutorial/time_lock_trim.png)
 ---
 
-#### 5) Pre-process analyzed data
+#### 5) Pre-process analyzed data (PSD or power spectral density)
 
-- When the STFT conversion is completed the user has to proceed by clicking on ***Power Spectral Density processing***.
+- When the STFT conversion is completed the user has to proceed by clicking the ***Power Spectral Density processing*** purple button.
+- A menu will pop up with processing options (options are set to ***no*** when initialized).
+- ***Change Bin Size***: merges original fft bins (default = 5 seconds) into larger bins (default = 300 seconds when activated).
+- ***Normalize***: Normalizes the PSDs based on choice e.g. log(e) or log(10)
+- ***Linearize***: Linearize PSD by fitting a two-term exponential (not recommended).
+- ***Remove Noise***: Replaces PSD frequency using [pchip](https://www.mathworks.com/help/matlab/ref/pchip.html) (default = 60 +/- 1 Hz when activated).
+- ***Remove Outliers***: Replaces outliers that are ***n*** times larger or smaller the median value of all power (default = 5 when activated).
 
 ![Banner](/Images/tutorial/psd_process.png)
 
+#### 5) Plot or Export
 
 
 **[<< Back to Main Page](/README.md)**
