@@ -48,7 +48,7 @@
 #### 4) Initiate spectral analysis (STFT or Short-time Fourier transform)
 
 - When the ***Get FFT*** button is toggled by the user, the LFP/EEG data will be converted to spectrograms and stored under the analysis folder.
-- The analysis folder is named after the chosen channel. In this example, the folder is named ***analysis_bla***.
+- The analysis folder is created automatically from MatWAND and is named after the chosen channel. In this example, the folder is named ***analysis_bla***.
 - Detailed description of the STFT algorithm can be found [here](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html).
 
 ![Banner](/Images/tutorial/fft_progress.png)
