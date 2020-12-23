@@ -1,7 +1,8 @@
 ## MatWAND Tutorial
 
-This is a step by step tutorial on how to use MatWAND to analyze LFP/EEG binary files exported from labchart. 
-This tutorial assumes that the LFP/EEG binary files have been already properly named and placed in a data folder (click here for more info).
+- This is a step-by-step tutorial on how to use MatWAND to analyze LFP/EEG data.
+- This example will focus on analysis of binary files exported from [labchart](https://www.adinstruments.com/products/labchart).
+- This tutorial assumes that the binary files have been properly named and placed in a data folder (click here for more info).
 
 ---
 
@@ -60,6 +61,7 @@ This tutorial assumes that the LFP/EEG binary files have been already properly n
 - More details on the trimming procedure can be found [here]().
 
 ![Banner](/Images/tutorial/time_lock_trim.png)
+
 ---
 
 #### 5) Pre-process analyzed data (PSD or power spectral density)
@@ -74,8 +76,19 @@ This tutorial assumes that the LFP/EEG binary files have been already properly n
 
 ![Banner](/Images/tutorial/psd_process.png)
 
-#### 5) Plot or Export
+- The last step in the analysis pipeline is to choose the conditions for plotting. 
+- The conditions are automatically detected and displayed based on file naming.
 
+![Banner](/Images/tutorial/cond_choice.png)
+
+#### 6) Plot or Export
+
+- spectrograms
+- PSDs
+- Time Plots
+- Summary/Average Plots
+
+---
 
 **[<< Back to Main Page](/README.md)**
 
