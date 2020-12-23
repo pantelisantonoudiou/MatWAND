@@ -22,7 +22,7 @@
 ![Banner](/Images/tutorial/input_parameters_gui.png)
 
 - A file type has to be chosen from the ***File Type*** field. 
-- Two file types currently supported are matlab and binary files. 
+- The only file types currently supported are matlab and binary files. 
 - In this example we selected ***adibin*** as we are analyzing binary data from labchart with ***single*** datatype. 
 - The option ***other*** allows to choose the file extension, scaling and [data type](/Docs/Inputs.md) of binary files.
 
