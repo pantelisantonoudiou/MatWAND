@@ -24,7 +24,7 @@
 - A file type has to be chosen from the ***File Type*** field. 
 - The only file types currently supported are matlab and binary files. 
 - In this example we selected ***adibin*** as we are analyzing binary data from labchart with ***single*** datatype. 
-- The option ***other*** allows to choose the file extension, scaling and [data type](/Docs/Inputs.md) of binary files.
+- The option ***other*** allows to choose the file extension, scaling (Norm. Factor) and [data type](/Docs/Inputs.md) of binary files.
 
 ![Banner](/Images/tutorial/file_type.png)
 
