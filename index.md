@@ -1,37 +1,27 @@
-## Welcome to GitHub Pages
+# MatWAND
+ MatWAND (Matlab spectral-Wave Analysis of Neuronal Data) is a MATLAB application for simple and efficient automated oscillation analysis.
+  
+ ![Banner](/Images/Interface.PNG)
+ 
+ ---
+ ## Overview
+- **[Script Overview](/Docs/Scirpt_Overview.md)**
+- **[File Naming](/Docs/file_name.md)**
+- **[Input](/Docs/Inputs.md)**
+- **[Tutorial](/Docs/Step-by-Step.md)**
 
-You can use the [editor on GitHub](https://github.com/pantelisantonoudiou/MatWAND/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+ ---
+ 
+## Installation
+To install the MatWAND application either:
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+a) Download and extract the files from the git repository and place in them in a new folder under your MATLAB directory.
 
-### Markdown
+b) Integrate Matlab with [Git](https://www.mathworks.com/help/matlab/matlab_prog/set-up-git-source-control.html) and clone the MatWAND repository.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/pantelisantonoudiou/MatWAND/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+## Run
+Launch the appication file ***batch_LFP_analysis.mlapp***.
+ 
+## Development
+MatWAND was developed in MATLAB 2018a by [Pantelis Antonoudiou](https://github.com/pantelisantonoudiou).
+It is released under the [MIT License](/LICENSE).
