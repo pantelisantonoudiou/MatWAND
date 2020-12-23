@@ -12,6 +12,16 @@
 
  ---
  
+## Installation
+To install the MatWAND application either:
+
+a) Download and extract the files from the git repository and place in them in a new folder under your MATLAB directory.
+
+b) Integrate Matlab with [Git](https://www.mathworks.com/help/matlab/matlab_prog/set-up-git-source-control.html) and clone the MatWAND repository.
+
+## Run
+Launch the appication file ***batch_LFP_analysis.mlapp***.
+ 
 ## Development
 MatWAND was developed in MATLAB 2018a by [Pantelis Antonoudiou](https://github.com/pantelisantonoudiou).
 It is released under the [MIT License](/LICENSE).
