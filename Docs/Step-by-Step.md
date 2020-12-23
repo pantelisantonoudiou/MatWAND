@@ -77,7 +77,8 @@
 ![Banner](/Images/tutorial/psd_process.png)
 
 - The last step in the analysis pipeline is to choose the conditions for plotting. 
-- Unique conditions are automatically detected and displayed based on file naming.
+- Upon completion of PSD processing, unique conditions are automatically detected and displayed based on file naming.
+- The user has to choose, which conditions to be included what is the order of the conditions for plotting.
 
 ![Banner](/Images/tutorial/cond_choice.png)
 
