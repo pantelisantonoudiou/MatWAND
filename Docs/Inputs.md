@@ -1,4 +1,5 @@
 # Inputs
+
 MatWAND was originally designed to process data saved from labchart into matlab files.
 
 * The inputs have to be structured in one of two following formats in order to be processed by MatWAND.
@@ -35,9 +36,9 @@ MatWAND was originally designed to process data saved from labchart into matlab 
 ---
 
 ## b) .binary files
-- The binary files contain only the data in raw voltage trace. 
 
-- Any of the following file formats can be used (supported by matlab memmap function https://www.mathworks.com/help/matlab/ref/memmapfile.html)
+- The binary files should only contain LFP/EEG voltage data.
+- Any of the following file formats can be used as supported by matlab [memmap](https://www.mathworks.com/help/matlab/ref/memmapfile.html) function.
 
         'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'single', 'double'
 
