@@ -7,13 +7,17 @@
 ## Naming
 - MatWAND requires the files to contain a unique number identifier between underscores.
 - This is essential for matching the files based on animal or subject. 
-- For example, in **animal1\_101_base.mat** where the identifier is ***101***.
+- For example, in **animal1\_101_baseline.mat** where the identifier is ***101***.
 - This will be matched with  **animal1\_102_drug.mat**.
 - **Underscores in the file name should only be used for identifiers and for adding more than one conditions.**
-- :x: **animal\_1_101_wt_base.mat**
-- :x: **PFC\_animal1_101_wt_base.mat**
-- :heavy_check_mark: **animal1\_101_wt_baseline.mat**
-- :heavy_check_mark: **animal1\_101_base.mat**
+
+:x: **animal\_1_101_wt_baseline.mat**
+
+:x: **PFC\_animal1_101_wt_baseline.mat**
+
+:heavy_check_mark: **animal1\_101_wt_baseline.mat**
+
+:heavy_check_mark: **animal1\_101_baseline.mat**
 
 ---
 
