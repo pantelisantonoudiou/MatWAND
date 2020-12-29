@@ -1,5 +1,5 @@
 # File preparation
-MatWAND accepts either .mat or binary files. The files can be separated in MatWAND or before MatWAND analysis starts by the user.
+MatWAND accepts either .mat or binary files. The files can be separated in MatWAND, or manually by the user before MatWAND analysis starts.
 
 ---
 
@@ -16,22 +16,26 @@ MatWAND accepts either .mat or binary files. The files can be separated in MatWA
 
 Consider an example where we want to separate the following files: 
 
-      anima55_1_wt.mat, animal65_2_wt.mat, animal72_3_.mat, , animal81_4_wt.mat
+      animal55_1_wt.mat, animal65_2_wt.mat, animal72_3_.mat, , animal81_4_wt.mat
       
 and comments:
       
       baseline, drugX, wash
       
-After MatWAND will result in the following files:
+- MatWAND will split the original names based on the comments as can be seen below. 
 
 | Original Name | baseline | drugX | wash |
 | ------------- | -------- | ----- | ---- |
-| anima55_1_wt.mat | anima55_1_wt_baseline.mat | anima55_1_wt_drux.mat | anima55_1_wt_wash.mat 
-| Paragraph        | Text        |
+| animal55_1_wt.mat | animal55_1_wt_baseline.mat | animal55_1_wt_drugX.mat | animal55_1_wt_wash.mat |
+| animal65_2_wt.mat | animal65_2_wt_baseline.mat | animal65_2_wt_drugX.mat | animal65_2_wt_wash.mat |
+| animal72_3_wt.mat | animal72_3_wt_baseline.mat | animal72_3_wt_drugX.mat | animal72_3_wt_wash.mat |
+| animal81_4_wt.mat | animal81_4_wt_baseline.mat | animal81_4_wt_drugX.mat | animal81_4_wt_wash.mat |
        
 ---
 
-### 2) User separation
+### 2) User separation before MatWAND initiation
+
+
 
 ---
 
