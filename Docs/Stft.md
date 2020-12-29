@@ -1,4 +1,4 @@
-# Short-time Fourier Transform (STFT)
+# Spectral analysis
 
 - The algorithm used in MatWAND for spectral analysis is a custom implementation of the Short-time Fourier Transform (STFT).
 - The voltage signal is analyzed using a sliding window of fixed length (default = 5 seconds) similar to 
