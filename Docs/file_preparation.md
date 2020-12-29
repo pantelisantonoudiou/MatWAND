@@ -1,5 +1,6 @@
 # File preparation
-MatWAND accepts either .mat or binary files. The files can be separated in MatWAND, or manually by the user before MatWAND analysis starts.
+- MatWAND accepts either [.mat or binary files](/Docs/Inputs.md). 
+- The files can be separated in MatWAND, or manually by the user before MatWAND analysis starts.
 
 ---
 
@@ -8,6 +9,11 @@ MatWAND accepts either .mat or binary files. The files can be separated in MatWA
 - This is essential for matching the files based on animal or subject. 
 - For example, in **animal1\_101_base.mat** where the identifier is ***101***.
 - This will be matched with  **animal1\_102_drug.mat**.
+- **Underscores in the file name should only be used for identifiers and for adding more than one conditions.**
+- :x: **animal\_1_101_wt_base.mat**
+- :x: **PFC\_animal1_101_wt_base.mat**
+- :heavy_check_mark: **animal1\_101_wt_baseline.mat**
+- :heavy_check_mark: **animal1\_101_base.mat**
 
 ---
 
