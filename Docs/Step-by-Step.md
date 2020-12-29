@@ -34,7 +34,7 @@
 
 - After the properties are chosen, the user will be prompted to choose a data folder, where the LFP/EEG files are present. 
 - It is recommended that the data folder is under a parent folder as MatWAND will subsequently create an analysis folder. 
-- In this example the ***.adibin*** files are situated in the ***raw_data*** folder which is placed under the ***test_mat*** parent directory.
+- In this example the ***.adibin*** files are situated in the ***raw_data*** folder which is placed under the ***test_mat*** parent folder.
 
 ![Banner](/Images/tutorial/load_raw_data.png)
 
