@@ -8,7 +8,6 @@
 - These properties can be adjusted in MatWAND [parameters menu](/Images/tutorial/input_parameters_gui.png) after analysis 
 [initiation](/Docs/Step-by-Step.md/#2-choose-file-and-analysis-parameters).
 - Each segment is converted to the frequency domain by applying the [FFT](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html).
-- The frequency range can be set during analysis(Initiate spectral analysis (STFT or Short-time Fourier transform))
-
+- The frequency range can be set during [MatWAND analysis](/Docs/Step-by-Step.md/#4-initiate-spectral-analysis) (default range = 0.4 - 200 Hz).
 
 **[<< Back to Main Page](/README.md)**
