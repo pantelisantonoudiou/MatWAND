@@ -4,12 +4,37 @@
 
 ---
 
-## Naming
-- MatWAND requires the files to contain a unique number identifier between underscores.
-- This is essential for matching the files based on animal or subject. 
+### File naming template
+The file names should contain:
+
+1) **userString**, e.g. animal5.
+2) unique identifier number (**ID**), e.g. 101.
+3) **condition**, e.g. baseline.
+
+** Template = **userString_ID_condition** ** -> e.g. animal5\_101_baseline.
+
+### General naming Rules
+- The three elements have to be separated by an underscore.
+
+userString_ID_condition (e.g. animal5\_101_baseline) :heavy_check_mark: 
+
+userString-ID-condition (e.g. animal5-101-baseline) :x: 
+
+userString^condition^ID (e.g. animal5^101^baseline) :x: 
+
+- The order of the three elements (user-string, ID, condition) must remain unchanged.
+:x: condition_user_string_ID, :x: user_string_condition_ID
+
+- ID needs to be between underscores.
+- This is essential for matching the files based on animal or subject.
+- The identifier should only consist of integers (101 :heavy_check_mark:, a2b :x:).
 - For example, in **animal1\_101_baseline.mat** where the identifier is ***101***.
 - This will be matched with  **animal1\_102_drug.mat**.
-- **Underscores in the file name should only be used for identifiers and for adding more than one conditions.**
+
+***Underscores in the file name should only be used for identifiers and for adding more than one conditions.**
+***Underscores in the file name should only be used for identifiers and for adding more than one conditions.**
+
+
 
 :x: **animal\_1_101_wt_baseline.mat**
 
@@ -45,7 +70,9 @@ and comments:
 
 ### 2) User separation before MatWAND initiation
 
-
+- Files can be also be separated by user before initiating MatWAND analysis.
+- The files should be separated based on their conditions.
+- Each animal must have a matching
 
 ---
 
