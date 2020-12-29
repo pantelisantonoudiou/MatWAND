@@ -5,10 +5,10 @@
  
  ---
  ## Overview
-- **[Script Overview](/Docs/Scirpt_Overview.md)**
 - **[File naming](/Docs/File_Naming.md)**
 - **[Input](/Docs/Inputs.md)**
 - **[Tutorial](/Docs/Step-by-Step.md)**
+- **[Script Overview](/Docs/Scirpt_Overview.md)**
 
  ---
  
