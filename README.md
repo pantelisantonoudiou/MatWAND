@@ -6,7 +6,7 @@
  ---
  ## Overview
 - **[Script Overview](/Docs/Scirpt_Overview.md)**
-- **[File naming](/Docs/file_naming.md)**
+- **[File naming](/Docs/File_Naming.md)**
 - **[Input](/Docs/Inputs.md)**
 - **[Tutorial](/Docs/Step-by-Step.md)**
 
