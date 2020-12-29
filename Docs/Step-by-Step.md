@@ -2,17 +2,17 @@
 
 - This is a step-by-step tutorial on how to use MatWAND to analyze LFP/EEG data.
 - This example will focus on analysis of binary files exported from [labchart](https://www.adinstruments.com/products/labchart).
-- This tutorial assumes that the binary files have been properly named and placed in a data folder (click here for more info).
+- This tutorial assumes that the files have been properly [named](/Docs/File_Naming.md) and placed in a [data folder](#3--choose-the-data-folder).
 
 ---
 
-#### 1) Initialize analysis.
+#### 1. Initialize analysis
 
 ![Banner](/Images/tutorial/init.png)
 
 ---
 
-#### 2) Choose file and analysis parameters. 
+#### 2. Choose file and analysis parameters
 
 - In this example our files contain 3 channels ('bla', 'pfc', 'emg'). 
 - The channel names have to be separated with a semicolon ( **;** ) as can be seen in the ***Channel Structure*** field. 
@@ -30,22 +30,22 @@
 
 ---
 
-#### 3) Choose the data folder where LFP/EEG binary files are present. 
+#### 3- Choose the data folder 
 
-- After the properties are chosen, the user will be prompted to choose a data folder. 
+- After the properties are chosen, the user will be prompted to choose a data folder, where the LFP/EEG files are present. 
 - It is recommended that the data folder is under a parent folder as MatWAND will subsequently create an analysis folder. 
 - In this example the ***.adibin*** files are situated in the ***raw_data*** folder which is placed under the ***test_mat*** parent directory.
 
 ![Banner](/Images/tutorial/load_raw_data.png)
 
 - After the folder is loaded, a file check is run on the background to determine if the files have been named properly. 
-- If the file check passes successfully, then the MatWAND status bar will show that the folder was loaded. Click [here](/Docs/Inputs.md) to see how to name and structure files.
+- If the file check passes successfully, then the MatWAND status bar will show that the folder was loaded. (Follow the links for more information on how to [name](/Docs/File_Naming.md) and [structure](/Docs/Inputs.md) files).
 
 ![Banner](/Images/tutorial/gui_raw_data_loaded.png)
 
 ---
 
-#### 4) Initiate spectral analysis (STFT or Short-time Fourier transform)
+#### 4. Initiate spectral analysis (STFT or Short-time Fourier transform)
 
 - When the ***Get FFT*** button is toggled by the user, the LFP/EEG data will be converted to spectrograms and stored under the analysis folder.
 - The analysis folder is created automatically from MatWAND and is named after the chosen channel. In this example, the folder is named ***analysis_bla***.
@@ -64,7 +64,7 @@
 
 ---
 
-#### 5) Pre-process analyzed data (PSD or power spectral density)
+#### 5. Pre-process analyzed data (PSD or power spectral density)
 
 - After STFT conversion, the user has to proceed by clicking the ***Power Spectral Density processing*** purple button.
 - A menu will pop up with processing options (options are set to ***no*** when initialized).
@@ -84,7 +84,7 @@
 
 ---
 
-#### 6) Plot or Export
+#### 6. Plot or Export
 
 - spectrograms
 - PSDs
