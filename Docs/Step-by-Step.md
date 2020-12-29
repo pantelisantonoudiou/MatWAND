@@ -53,7 +53,7 @@
 
 ![Banner](/Images/tutorial/fft_progress.png)
 
-- Before the conversion begins, the user will be asked whether to separate files based on comments (provided in matlab files [pipeline](/Images/MatWAND_pipeline.svg)). 
+- Before the conversion begins, the user will be asked whether to separate files based on comments (provided in matlab files [pipeline](/Images/MatWAND_pipeline.pdf)).
 
 ![Banner](/Images/tutorial/separate_conditions.png)
 
