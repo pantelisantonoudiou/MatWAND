@@ -1,4 +1,4 @@
-# File preparation
+# File naming
 - MatWAND accepts either [.mat or binary files](/Docs/Inputs.md). 
 - The files can be separated in MatWAND, or manually by the user before MatWAND analysis starts.
 
@@ -13,17 +13,23 @@ The file names should contain:
 
 ** Template = **userString_ID_condition** ** -> e.g. animal5\_101_baseline.
 
-### General naming Rules
-- The three elements have to be separated by an underscore.
+### Naming Rules
+1) The three elements have to be separated by an underscore.
+      - userString_ID_condition **(e.g. animal5\_101_baseline)** :heavy_check_mark: 
+      - userString-ID-condition **(e.g. animal5-101-baseline)** :x: 
+      - userString^condition^ID **(e.g. animal5^101^baseline)** :x: 
 
-userString_ID_condition (e.g. animal5\_101_baseline) :heavy_check_mark: 
+2) The order of the three elements (user-string, ID, condition) must remain unchanged.
+      - userString_ID_condition **(e.g. animal56\_105_drug)** :heavy_check_mark: 
+      - condition_userString_ID **(e.g. drug\_animal56_105)** :x: 
+      - userString_condition_ID **(e.g. animal56\_drug_105)** :x:  
 
-userString-ID-condition (e.g. animal5-101-baseline) :x: 
+3) Underscores should not be used withing elements
+      - **animal1\_101_wt_baseline** :heavy_check_mark:
+      - **animal1\_101_baseline** :heavy_check_mark:
+      - **PFC\_animal1_101_wt_baseline.mat** :x:  
+      - **animal\_1_101_wt_baseline.mat** :x:  
 
-userString^condition^ID (e.g. animal5^101^baseline) :x: 
-
-- The order of the three elements (user-string, ID, condition) must remain unchanged.
-:x: condition_user_string_ID, :x: user_string_condition_ID
 
 - ID needs to be between underscores.
 - This is essential for matching the files based on animal or subject.
@@ -36,13 +42,6 @@ userString^condition^ID (e.g. animal5^101^baseline) :x:
 
 
 
-:x: **animal\_1_101_wt_baseline.mat**
-
-:x: **PFC\_animal1_101_wt_baseline.mat**
-
-:heavy_check_mark: **animal1\_101_wt_baseline.mat**
-
-:heavy_check_mark: **animal1\_101_baseline.mat**
 
 ---
 
