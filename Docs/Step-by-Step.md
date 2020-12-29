@@ -2,7 +2,7 @@
 
 - This is a step-by-step tutorial on how to use MatWAND to analyze LFP/EEG data.
 - This example will focus on analysis of binary files exported from [labchart](https://www.adinstruments.com/products/labchart).
-- This tutorial assumes that the files have been properly [named](/Docs/File_Naming.md) and placed in a [data folder](#3--choose-the-data-folder).
+- This tutorial assumes that the files have been properly [named](/Docs/File_Naming.md) and placed in a [data folder](#3-choose-the-data-folder).
 
 ---
 
@@ -30,7 +30,7 @@
 
 ---
 
-#### 3- Choose the data folder 
+#### 3. Choose the data folder 
 
 - After the properties are chosen, the user will be prompted to choose a data folder, where the LFP/EEG files are present. 
 - It is recommended that the data folder is under a parent folder as MatWAND will subsequently create an analysis folder. 
