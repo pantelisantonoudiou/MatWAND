@@ -36,7 +36,7 @@ The file names should contain:
 4) The ID should only consist of integers
       - (101 :heavy_check_mark:, 12b :x:, zab :x:, 5 :heavy_check_mark:, 55*12 :x:, 55_12 :x:)
 
-5) Optional: More than one condition can be appended to the end of the name
+5) Optional: More than one condition can be appended to the end of the file name
       - userString_ID_condition1_condition2 **(e.g. animal4\_101_wt_baseline)**
       - userString_ID_condition1_condition2 **(e.g. animal4\_101_ko_baseline)**
 ---
