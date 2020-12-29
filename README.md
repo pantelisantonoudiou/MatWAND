@@ -5,9 +5,10 @@
  
  ---
  ## Overview
-- **[File naming](/Docs/File_Naming.md)**
+- **[File Naming](/Docs/File_Naming.md)**
 - **[Input](/Docs/Inputs.md)**
 - **[Tutorial](/Docs/Step-by-Step.md)**
+- **[Spectral Analysis](/Docs/Stft.md)**
 - **[Script Overview](/Docs/Scirpt_Overview.md)**
 
  ---
