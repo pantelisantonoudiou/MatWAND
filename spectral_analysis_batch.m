@@ -1479,7 +1479,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             
             % get conditions
             prompt = {'Enter conditions ( separated with ; ):'};
-            Prompt_title = 'For observation only'; dims = [1 50];
+            Prompt_title = 'Choose conditions'; dims = [1 50];
             definput = {strjoin(unique_conds,';')};
             answer = inputmod(prompt,Prompt_title,dims,definput);
             

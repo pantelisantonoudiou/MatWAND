@@ -3,9 +3,11 @@
 
 MatWand Consists of:
 
-a) Main class --> Spectral_Analysis_batch.m
+a) Main class: Spectral_Analysis_batch.m
 
-b) Helper sciprts -->
+b) Main application: batch_LFP_analysis.mIapp
+
+c) Helper sciprts:
 
   - inputmod.m - Author : The MathWorks, Inc.
   
@@ -17,16 +19,9 @@ b) Helper sciprts -->
 
   - [progressbar.m](https://www.mathworks.com/matlabcentral/fileexchange/6922-progressbar) - Author: Steve Hoelzer
                       
-c) Main application --> batch_LFP_analysis.mIapp
-
-d) Helper applications -->
-
-                      set_parameters.mIapp -  user input for parameter input
-                          
-                      psd_proc_uinput.mIapp -  user input for psd pre-processing
-
-
-
+d) Helper applications:
+  - set_parameters.mIapp -  user input for parameter input
+  - psd_proc_uinput.mIapp -  user input for psd pre-processing
 
 
 **[<< Back to Main Page](/README.md)**
