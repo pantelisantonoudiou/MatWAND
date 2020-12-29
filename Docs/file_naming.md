@@ -34,33 +34,28 @@ The file names should contain:
       - userString_ID_cond_ition (e.g. animal4\_101_**base_line)** :x:
       
 4) The ID should only consist of integers
-      - 101 :heavy_check_mark:
-      - 5 :heavy_check_mark:
-      - 12b :x:
-      - zab :x:
-      - 55*12 :x:
-      - 55_12 :x:
+      - (101 :heavy_check_mark:, 12b :x:, zab :x:, 5 :heavy_check_mark:, 55*12 :x:, 55_12 :x:)
 
-5) Optional: More than one condition can be added
-      - userString_ID_condition1_condition2 **(e.g. animal4\_101_wt_baseline)** :heavy_check_mark:
-      - userString_ID_condition1_condition2 **(e.g. animal4\_101_ko_baseline)** :heavy_check_mark:
+5) Optional: More than one condition can be appended to the end of the name
+      - userString_ID_condition1_condition2 **(e.g. animal4\_101_wt_baseline)**
+      - userString_ID_condition1_condition2 **(e.g. animal4\_101_ko_baseline)**
 ---
 
 ### MatWAND separation
 - MatWAND will prompt the user for file separation based on comments in [.mat file](/Docs/Inputs.md).
-- Useful with short files were the comments have been saved.
+- Useful for short files where the comments and comment times have been recorded.
 
 Consider an example where we want to separate the following files: 
 
       animal55_1_wt.mat, animal65_2_wt.mat, animal72_3_.mat, , animal81_4_wt.mat
       
-and comments:
+with the following comments:
       
       baseline, drugX, wash
       
-- MatWAND will split the original names based on the comments as can be seen below. 
+- MatWAND will split the original names based on the comments and comment times as can be seen below. 
 
-| Original Name | baseline | drugX | wash |
+| Original Name | Condition 1 | Condition 2 | Condition 3 |
 | ------------- | -------- | ----- | ---- |
 | animal55_1_wt.mat | animal55_1_wt_baseline.mat | animal55_1_wt_drugX.mat | animal55_1_wt_wash.mat |
 | animal65_2_wt.mat | animal65_2_wt_baseline.mat | animal65_2_wt_drugX.mat | animal65_2_wt_wash.mat |
@@ -71,12 +66,11 @@ and comments:
 
 ### User separation
 
-- Files can be also be separated by user before initiating MatWAND analysis.
+- Files can be also be separated by the user before initiating MatWAND analysis.
 - Useful for long files that need to be anyway saved separately.
-- The files should be separated based on their conditions.
-- Each animal must have a matching
+- The files should be separated based on their conditions with a matching ID as can be seen below.
 
-| baseline | drugX | wash |
+| Condition 1 | Condition 2 | Condition 3 |
 | -------- | ----- | ---- |
 | animal55_1_baseline.bin | animal55_1_drugX.bin | animal55_1_wash.bin |
 | animal65_2_baseline.bin | animal65_2_drugX.bin | animal65_2_wash.bin |
