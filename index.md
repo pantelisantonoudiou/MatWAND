@@ -6,10 +6,11 @@
  ---
  
  ## Overview
-- **[Script Overview](/Docs/Scirpt_Overview.md)**
-- **[File Naming](/Docs/file_name.md)**
+- **[File Naming](/Docs/File_Naming.md)**
 - **[Input](/Docs/Inputs.md)**
 - **[Tutorial](/Docs/Step-by-Step.md)**
+- **[Spectral Analysis](/Docs/Stft.md)**
+- **[Script Overview](/Docs/Scirpt_Overview.md)**
 
  ---
  
@@ -26,3 +27,4 @@ Launch the appication file ***batch_LFP_analysis.mlapp***.
 ## Development
 MatWAND was developed in MATLAB 2018a by [Pantelis Antonoudiou](https://github.com/pantelisantonoudiou).
 It is released under the [MIT License](/LICENSE).
+
