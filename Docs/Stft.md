@@ -11,4 +11,4 @@ Any spectral [window](https://www.mathworks.com/help/signal/ug/windows.html) sup
 - Each segment is converted to the frequency domain by applying the [FFT](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html).
 - The frequency range can be set during [MatWAND analysis](/Docs/Step-by-Step.md/#4-initiate-spectral-analysis) (default range = 0.4 - 200 Hz).
 
-**[<< Back to Main Page](/README.md)**
+**[<< Back to Main Page](/index.md)**
