@@ -24,4 +24,4 @@ d) Helper applications:
   - psd_proc_uinput.mIapp -  user input for psd pre-processing
 
 
-**[<< Back to Main Page](/README.md)**
+**[<< Back to Main Page](/index.md)**
