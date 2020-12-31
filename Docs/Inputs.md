@@ -28,7 +28,7 @@ MatWAND was originally designed to process data saved from labchart into matlab 
 
 - Data should be structured so that channels follow sequentially as can be seen in the example below.
 
-<img src="/Images/data_format_matlab.png" width="500">
+![Banner](/Images/tutorial/data_format_matlab.png)
 
 - You can find an example .mat file **[<< Here](/examples)**
 - Extensive information about LabChart to MATLAB export can be found on the **[ADINSTRUMENTS](https://www.adinstruments.com/support/knowledge-base/how-does-matlab-open-exported-data)** website.
@@ -44,7 +44,7 @@ MatWAND was originally designed to process data saved from labchart into matlab 
 
 - Data from multiple channels should be interleaved into one signal as illustrated below.
 
-<img src="/Images/data_format_binary.png" width="700">
+![Banner](/Images/tutorial/data_format_binary.png)
 
 ---
 
