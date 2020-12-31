@@ -1,5 +1,5 @@
 # File naming
-- MatWAND accepts either [.mat or binary files](/Docs/Inputs.md). 
+- MatWAND accepts either [.mat or binary files](/Inputs.md). 
 - The files can be separated [in MatWAND](#matwand-separation), or manually by the user [before](#user-separation) MatWAND analysis starts.
 
 ---
@@ -42,7 +42,7 @@ The file names should contain:
 ---
 
 ### MatWAND separation
-- MatWAND will prompt the user for file separation based on comments in [.mat file](/Docs/Inputs.md).
+- MatWAND will prompt the user for file separation based on comments in [.mat file](/Inputs.md).
 - Useful for short files where the comments and comment times have been recorded.
 
 Consider an example where we want to separate the following files: 
