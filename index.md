@@ -31,5 +31,5 @@ Launch the appication file ***batch_LFP_analysis.mlapp***.
 ## Development
 
 MatWAND was developed in MATLAB 2018a by [Pantelis Antonoudiou](https://github.com/pantelisantonoudiou).
-It is released under the [MIT License](/LICENSE).
+It is released under the [MIT License](https://github.com/git/git-scm.com/blob/master/MIT-LICENSE.txt).
 
