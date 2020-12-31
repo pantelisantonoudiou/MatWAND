@@ -8,11 +8,11 @@ MatWAND (Matlab spectral-Wave Analysis of Neuronal Data) is a MATLAB application
  
 ## Overview
  
-- **[File Naming](/Docs/File_Naming.md)**
-- **[Input](/Docs/Inputs.md)**
-- **[Tutorial](/Docs/Step-by-Step.md)**
-- **[Spectral Analysis](/Docs/Stft.md)**
-- **[Script Overview](/Docs/Scirpt_Overview.md)**
+- **[File Naming](/File_Naming.md)**
+- **[Input](/Inputs.md)**
+- **[Tutorial](/Step-by-Step.md)**
+- **[Spectral Analysis](/Stft.md)**
+- **[Script Overview](/Scirpt_Overview.md)**
 
  ---
  
