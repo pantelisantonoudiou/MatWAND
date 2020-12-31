@@ -2,7 +2,7 @@
 
 - This is a step-by-step tutorial on how to use MatWAND to analyze LFP/EEG data.
 - This example will focus on analysis of binary files exported from [labchart](https://www.adinstruments.com/products/labchart).
-- This tutorial assumes that the files have been properly [named](/Docs/File_Naming.md) and placed in a [data folder](#3-choose-the-data-folder).
+- This tutorial assumes that the files have been properly [named](/File_Naming.md) and placed in a [data folder](#3-choose-the-data-folder).
 
 ---
 
@@ -24,7 +24,7 @@
 - A file type has to be chosen from the ***File Type*** field. 
 - The only file types currently supported are matlab and binary files. 
 - In this example we selected ***adibin*** as we are analyzing binary data from labchart with ***single*** datatype. 
-- The option ***other*** allows to choose the file extension, scaling (Norm. Factor) and [data type](/Docs/Inputs.md) of binary files.
+- The option ***other*** allows to choose the file extension, scaling (Norm. Factor) and [data type](/Inputs.md) of binary files.
 
 ![Banner](/Images/tutorial/file_type.png)
 
@@ -39,7 +39,7 @@
 ![Banner](/Images/tutorial/load_raw_data.png)
 
 - After the folder is loaded, a file check is run on the background to determine if the files have been named properly. 
-- If the file check passes successfully, then the MatWAND status bar will show that the folder was loaded. (Follow the links for more information on how to [name](/Docs/File_Naming.md) and [structure](/Docs/Inputs.md) files).
+- If the file check passes successfully, then the MatWAND status bar will show that the folder was loaded. (Follow the links for more information on how to [name](/File_Naming.md) and [structure](/Inputs.md) files).
 
 ![Banner](/Images/tutorial/gui_raw_data_loaded.png)
 
@@ -49,7 +49,7 @@
 
 - When the ***Get FFT*** button is toggled by the user, the LFP/EEG data will be converted to spectrograms and stored under the analysis folder.
 - The analysis folder is created automatically from MatWAND and is named after the chosen channel. In this example, the folder is named ***analysis_bla***.
-- Detailed description of the STFT algorithm can be found [here](/Docs/Stft.md).
+- Detailed description of the STFT algorithm can be found [here](/Stft.md).
 
 ![Banner](/Images/tutorial/fft_progress.png)
 
