@@ -48,4 +48,4 @@ MatWAND was originally designed to process data saved from labchart into matlab 
 
 ---
 
-**[<< Back to Main Page](/README.md)**
+**[<< Back to Main Page](/index.md)**
