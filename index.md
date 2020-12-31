@@ -1,12 +1,15 @@
 # MatWAND
 
- MatWAND (Matlab spectral-Wave Analysis of Neuronal Data) is a MATLAB application for simple and efficient automated oscillation analysis.
+MatWAND (Matlab spectral-Wave Analysis of Neuronal Data) is a MATLAB application for simple and efficient automated oscillation analysis.
   
- ![Banner](/Images/Interface.PNG)
+![Banner](/Images/Interface.PNG)
+ 
+![Banner](/Images/data_format_binary.png.PNG)
+
  
  ---
  
- ## Overview
+## Overview
  
 - **[File Naming](/Docs/File_Naming.md)**
 - **[Input](/Docs/Inputs.md)**
