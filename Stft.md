@@ -7,8 +7,8 @@
 - For each segment, a windowing function is applied (default = [hann](https://www.mathworks.com/help/signal/ref/hann.html) window). 
 Any spectral [window](https://www.mathworks.com/help/signal/ug/windows.html) supported by your MATLAB version can be chosen.
 - These properties can be adjusted in MatWAND [parameters menu](/Images/tutorial/input_parameters_gui.png) after analysis 
-[initiation](/Docs/Step-by-Step.md/#2-choose-file-and-analysis-parameters).
+[initiation](/Step-by-Step.md/#2-choose-file-and-analysis-parameters).
 - Each segment is converted to the frequency domain by applying the [FFT](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html).
-- The frequency range can be set during [MatWAND analysis](/Docs/Step-by-Step.md/#4-initiate-spectral-analysis) (default range = 0.4 - 200 Hz).
+- The frequency range can be set during [MatWAND analysis](/Step-by-Step.md/#4-initiate-spectral-analysis) (default range = 0.4 - 200 Hz).
 
 **[<< Back to Main Page](/index.md)**
