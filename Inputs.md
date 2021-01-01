@@ -30,7 +30,7 @@ MatWAND was originally designed to process data saved from labchart into matlab 
 
 ![Banner](/Images/data_format_matlab.png)
 
-- You can find an example .mat file **[<< Here](/examples)**
+- You can find an example .mat file **[<< Here](/examples/matfile_3ch.mat)**
 - Extensive information about LabChart to MATLAB export can be found on the **[ADINSTRUMENTS](https://www.adinstruments.com/support/knowledge-base/how-does-matlab-open-exported-data)** website.
 
 ---
