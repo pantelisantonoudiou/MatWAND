@@ -38,7 +38,7 @@ The file names should contain:
 
 3. Underscores should not be used withing elements
 
-      * userString_ID_condition **(e.g. PFCanimal4\_101_baseline)** &nbsp; :heavy_check_mark:
+      * userString_ID_condition **(e.g. PFCanimal4\_101_baseline)** &nbsp; &nbsp; &nbsp; :heavy_check_mark:
       
       * user_String_ID_condition **(e.g. PFC\_animal4**_101_baseline) &nbsp; :x:
       
@@ -46,7 +46,17 @@ The file names should contain:
       
 4. The ID should only consist of integers
 
-      * 101 &nbsp; :heavy_check_mark: , 12b &nbsp; :x: , zab &nbsp; :x: , 5 &nbsp; :heavy_check_mark: , 55*12 &nbsp; :x: , 55_12 &nbsp; :x:
+      * 101 &nbsp; :heavy_check_mark:
+      
+      * 12b &nbsp; :x:  
+      
+      * zab &nbsp; :x:
+      
+      * 5 &nbsp; :heavy_check_mark:
+      
+      * 55*12 &nbsp; :x:
+      
+      * 55_12 &nbsp; :x:
 
 5. Optional: More than one condition can be appended to the end of the file name
 
