@@ -38,11 +38,11 @@ The file names should contain:
 
 3. Underscores should not be used withing elements
 
-      * userString_ID_condition **(e.g. animal4\_101_baseline)** &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; :heavy_check_mark:
+      * userString_ID_condition **(e.g. PFCanimal4\_101_baseline)** &nbsp; :heavy_check_mark:
       
       * user_String_ID_condition **(e.g. PFC\_animal4**_101_wt_baseline.mat) :x:
       
-      * userString_ID_cond_ition (e.g. animal4\_101_**base_line)** &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :x:
+      * userString_ID_cond_ition (e.g. PFCanimal4\_101_**base_line)** &nbsp;  :x:
       
 4. The ID should only consist of integers
 
