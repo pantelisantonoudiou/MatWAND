@@ -22,11 +22,11 @@ The file names should contain:
 ### Naming Rules
 1. The three elements have to be separated by an underscore (ID needs to be between underscores)
 
-      1. userString_ID_condition **(e.g. animal5\_101_baseline)** :heavy_check_mark: 
+      * userString_ID_condition **(e.g. animal5\_101_baseline)** :heavy_check_mark: 
       
-      2. userString-ID-condition **(e.g. animal5-101-baseline)**  :x: 
+      * userString-ID-condition **(e.g. animal5-101-baseline)**  :x: 
      
-      3. userString^condition^ID **(e.g. animal5^101^baseline)**  :x: 
+      * userString^condition^ID **(e.g. animal5^101^baseline)**  :x: 
 
 2. The order of the three elements (user-string, ID, condition) must remain unchanged
       * userString_ID_condition **(e.g. animal56\_105_drug)** :heavy_check_mark: 
