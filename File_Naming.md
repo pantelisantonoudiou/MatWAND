@@ -22,7 +22,7 @@ The file names should contain:
 ### Naming Rules
 1. The three elements have to be separated by an underscore (ID needs to be between underscores)
 
-      * userString_ID_condition **(e.g. animal5\_101_baseline)** &nbsp;&nbsp; :heavy_check_mark: 
+      * userString_ID_condition **(e.g. animal5\_101_baseline)** &nbsp;:heavy_check_mark: 
       
       * userString-ID-condition **(e.g. animal5-101-baseline)**  &nbsp;&nbsp;&nbsp; :x: 
      
@@ -30,23 +30,23 @@ The file names should contain:
 
 2. The order of the three elements (user-string, ID, condition) must remain unchanged
 
-      * userString_ID_condition **(e.g. animal56\_105_drug)** :heavy_check_mark: 
+      * userString_ID_condition **(e.g. animal56\_105_drug)** &nbsp; :heavy_check_mark: 
       
-      * condition_userString_ID **(e.g. drug\_animal56_105)** :x: 
+      * condition_userString_ID **(e.g. drug\_animal56_105)** &nbsp; :x: 
       
-      * userString_condition_ID **(e.g. animal56\_drug_105)** :x:  
+      * userString_condition_ID **(e.g. animal56\_drug_105)** &nbsp; :x:  
 
 3. Underscores should not be used withing elements
 
-      * userString_ID_condition **(e.g. animal4\_101_baseline)** &nbsp; &nbsp; &nbsp; :heavy_check_mark:
+      * userString_ID_condition **(e.g. animal4\_101_baseline)** &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; :heavy_check_mark:
       
       * user_String_ID_condition **(e.g. PFC\_animal4**_101_wt_baseline.mat) :x:
       
-      * userString_ID_cond_ition (e.g. animal4\_101_**base_line)** &nbsp; &nbsp; &nbsp; :x:
+      * userString_ID_cond_ition (e.g. animal4\_101_**base_line)** &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :x:
       
 4. The ID should only consist of integers
 
-      * (101 :heavy_check_mark:, 12b :x:, zab :x:, 5 :heavy_check_mark:, 55*12 :x:, 55_12 :x:)
+      * 101 :heavy_check_mark:, 12b :x:, zab :x:, 5 :heavy_check_mark:, 55*12 :x:, 55_12 :x:
 
 5. Optional: More than one condition can be appended to the end of the file name
 
