@@ -40,13 +40,13 @@ The file names should contain:
 
       * userString_ID_condition **(e.g. PFCanimal4\_101_baseline)** &nbsp; :heavy_check_mark:
       
-      * user_String_ID_condition **(e.g. PFC\_animal4**_101_baseline) &nbsp; &nbsp; &nbsp; :x:
+      * user_String_ID_condition **(e.g. PFC\_animal4**_101_baseline) &nbsp; :x:
       
-      * userString_ID_cond_ition (e.g. PFCanimal4\_101_**base_line)** &nbsp; &nbsp; &nbsp; :x:
+      * userString_ID_cond_ition (e.g. PFCanimal4\_101_**base_line)** &nbsp; :x:
       
 4. The ID should only consist of integers
 
-      * 101 :heavy_check_mark:, 12b :x:, zab :x:, 5 :heavy_check_mark:, 55*12 :x:, 55_12 :x:
+      * 101 &nbsp; :heavy_check_mark: , 12b &nbsp; :x: , zab &nbsp; :x: , 5 &nbsp; :heavy_check_mark: , 55*12 &nbsp; :x: , 55_12 &nbsp; :x:
 
 5. Optional: More than one condition can be appended to the end of the file name
 
