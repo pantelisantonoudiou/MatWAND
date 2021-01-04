@@ -8,7 +8,9 @@
 The file names should contain:
 
 1) **userString** (e.g. animal5).
+
 2) **ID** or unique identification number (e.g. 101).
+
 3) **condition** (e.g. baseline).
 
 ** Template = **userString_ID_condition** ** -> e.g. animal5\_101_baseline.
@@ -19,29 +21,35 @@ The file names should contain:
 
 ### Naming Rules
 1) The three elements have to be separated by an underscore (ID needs to be between underscores)
+
       - userString_ID_condition **(e.g. animal5\_101_baseline)** :heavy_check_mark: 
       - userString-ID-condition **(e.g. animal5-101-baseline)**  :x: 
       - userString^condition^ID **(e.g. animal5^101^baseline)**  :x: 
 
 2) The order of the three elements (user-string, ID, condition) must remain unchanged
+
       - userString_ID_condition **(e.g. animal56\_105_drug)** :heavy_check_mark: 
       - condition_userString_ID **(e.g. drug\_animal56_105)** :x: 
       - userString_condition_ID **(e.g. animal56\_drug_105)** :x:  
 
 3) Underscores should not be used withing elements
+
       - userString_ID_condition **(e.g. animal4\_101_baseline)** :heavy_check_mark:
       - user_String_ID_condition **(e.g. PFC\_animal4**_101_wt_baseline.mat) :x:  
       - userString_ID_cond_ition (e.g. animal4\_101_**base_line)** :x:
       
 4) The ID should only consist of integers
+
       - (101 :heavy_check_mark:, 12b :x:, zab :x:, 5 :heavy_check_mark:, 55*12 :x:, 55_12 :x:)
 
 5) Optional: More than one condition can be appended to the end of the file name
+
       - userString_ID_condition1_condition2 **(e.g. animal4\_101_wt_baseline)**
       - userString_ID_condition1_condition2 **(e.g. animal4\_101_ko_baseline)**
 ---
 
 ### MatWAND separation
+
 - MatWAND will prompt the user for file separation based on comments in [.mat file](/Inputs.md).
 - Useful for short files where the comments and comment times have been recorded.
 
