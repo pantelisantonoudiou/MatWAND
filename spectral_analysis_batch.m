@@ -2301,16 +2301,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 strc_psd = load(fullfile(obj.raw_psd_path ,mat_dir(i).name)); %struct = rmfield(struct,'power_matrix')
                 
                 if obj.bin_size ~= -1 % merge bins
-                    proc_matrix = merge_bins(obj,strc_psd.power_matrix);
-                    
+                    proc_matrix = merge_bins(obj,strc_psd.power_matrix);    
                 else % create proc matrix if not merging
                     proc_matrix = strc_psd.power_matrix;
-                    
                 end
                 
                 %1%%  remove outliers from data
                 if obj.outlier_var ~= -1
-                    [proc_matrix,~]  = remove_outliers_pmatrix(obj,proc_matrix,freq,obj.LowFCut,obj.HighFCut);
+                    [proc_matrix,~] = remove_outliers_pmatrix(obj, proc_matrix, freq, obj.LowFCut, obj.HighFCut);
                 end
                 
                 %2%%  remove noise from data %%%
@@ -2321,13 +2319,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 %3%%  normalise data %%%
                 if strcmp (obj.norm_var, 'log(e)')
                     proc_matrix  = log(proc_matrix);
-                    
                 elseif strcmp (obj.norm_var, 'log(10)')
                     proc_matrix  = log10(proc_matrix);
-                    
                 elseif strcmp (obj.norm_var, 'maxVal')
-                    proc_matrix  = power_matrix / max(proc_matrix(:));
-                    
+                    proc_matrix  = proc_matrix / max(proc_matrix(:));
                 elseif strcmp(obj.norm_var, 'totalpower')
                     proc_matrix = obj.TotalPower_norm(proc_matrix);
                 end
@@ -2443,7 +2438,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             for i = 1:length(outlier_index)
                 % replace outlier value
                 if outlier_index(i) == 1
-                    p_matrix_out(:,i) =  NaN ;%median(power_matrix(:));
+                    p_matrix_out(:,i) = NaN;%median(power_matrix(:));
                 end
             end
             
