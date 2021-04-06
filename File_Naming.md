@@ -36,7 +36,7 @@ The file names should contain:
       
       * userString_condition_ID **(e.g. animal56\_drug_105)** &nbsp; :x:  
 
-3. Underscores should not be used withing elements
+3. Underscores should not be used within elements
 
       * userString_ID_condition **(e.g. PFCanimal4\_101_baseline)** &nbsp; &nbsp; &nbsp; :heavy_check_mark:
       
