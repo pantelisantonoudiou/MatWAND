@@ -61,38 +61,39 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
     properties
         
         % User input from application or
-        set_array = struct; % structure to store class data
+        set_array = struct;         % structure to store class data
+        path_type;                  % forward or backward slash according to OS
  
         % wave properties
-        dur  = 5  % spectral window duration of the fft transform (in seconds)
-        Fs = 4000; % sampling rate
-        fft_window_type; % window type (default = hann)
-        winsize % spectral window duration in samples (depends on sampling rate)
-        block_number = 1; % block
-        channel_No = 1; % channel to be analyzed
-        channel_struct = {'BLA'};
+        dur  = 5                    % spectral window duration of the fft transform (in seconds)
+        Fs = 4000;                  % sampling rate
+        fft_window_type;            % window type (default = hann)
+        winsize                     % spectral window duration in samples (depends on sampling rate)
+        block_number = 1;           % block
+        channel_No = 1;             % channel to be analyzed
+        channel_struct = {'BLA'};   % channel structure
         
         % for multichannel long recordings
-        Tchannels = 3; % channels per file
-        start_time = 0 % in hours
-        period_dur = 60; % in minutes  % sets blocks to be analysed from binary files
+        Tchannels = 3;              % channels per file
+        start_time = 0              % in hours
+        period_dur = 60;            % in minutes  % sets blocks to be analysed from binary files
         
         % loading paths
-        lfp_data_path = 'C:\Users\panton01\Desktop\INvivo_data\Test\raw_data\';% LFP folder path
-        desktop_path; % path to desktop
-        save_path; % analysed folder path
-        raw_psd_user; % raw unseparated psd path
-        raw_psd_path % raw psd folder path
-        proc_psd_path % processed psd path
-        excld_path % excluded psd path
-        export_path % path for exported tables and parameters
+        lfp_data_path;              % LFP folder path
+        desktop_path;               % path to desktop
+        save_path;                  % analysed folder path
+        raw_psd_user;               % raw unseparated psd path
+        raw_psd_path                % raw psd folder path
+        proc_psd_path               % processed psd path
+        excld_path                  % excluded psd path
+        export_path                 % path for exported tables and parameters
         
         % freq analysis properties
-        freq_cmd = '0:obj.Fs/obj.winsize:obj.Fs/2' % frequency vector for psd
-        LowFCut = 0.4; %low frequency boundary
-        HighFCut = 200; %high frequency boundary
-        F1 % lower freq index of extracted raw psd
-        F2 % higher freq index of extracted raw psd
+        freq_cmd = '0:obj.Fs/obj.winsize:obj.Fs/2'      % frequency vector for psd
+        LowFCut = 0.4;                                  % low frequency boundary
+        HighFCut = 200;                                 % high frequency boundary
+        F1                                              % lower freq index of extracted raw psd
+        F2                                              % higher freq index of extracted raw psd
         analysed_range
         
         % psd processing variables
@@ -180,7 +181,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             lfp_dir = dir(fullfile(mat_path,'*.mat'));
             
             % make new folder to store down_sampled traces
-            k = strfind(mat_path,'\');
+            k = strfind(mat_path,obj.path_type);
             downsamp_path = fullfile(mat_path(1:k(end)-1),['resamp_traces_' ch_name ]);
             mkdir(downsamp_path);
             
@@ -1214,7 +1215,10 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             % get path to dekstop
             obj.desktop_path = cd;
             obj.desktop_path = obj.desktop_path(1:strfind( obj.desktop_path,'Documents')-1);
-            obj.desktop_path = fullfile( obj.desktop_path,'Desktop\');
+            obj.desktop_path = fullfile( obj.desktop_path,'Desktop');
+            
+            % determine if pc
+            if ispc ==1; obj.path_type = '\' ; else ; obj.path_type = '/'; end
             
             % add helper path
             addpath(fullfile(pwd,'helper'))            
@@ -1242,7 +1246,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function obj = make_analysis_dir(obj)
             % obj.save_path,obj.raw_psd_path  = make_analysis_dir(obj.lfp_data_path)
             % get analysis and raw psd folder paths
-            k = strfind(obj.lfp_data_path,'\');
+            k = strfind(obj.lfp_data_path,obj.path_type);
             obj.save_path = fullfile(obj.lfp_data_path(1:k(end-1)-1),['analysis_' obj.channel_struct{obj.channel_No}]);
             obj.raw_psd_path = fullfile(obj.save_path,'raw_psd'); % ['raw_psd_' obj.channel_struct{obj.channel_No}]
             
@@ -3969,7 +3973,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 % get mean and sem as filled
                 [mean_wave, xfill,yfill] = obj.getmatrix_mean(feature_aver,t);
                 
-                k = strfind(psd_object.save_path,'\');
+                k = strfind(psd_object.save_path,obj.path_type);
                 hold on;
                 
                 %plot ind
