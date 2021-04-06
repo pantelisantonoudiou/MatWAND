@@ -35,7 +35,7 @@ The file names should contain:
       - condition_userString_ID **(e.g. drug\_animal56_105)** :x: 
       - userString_condition_ID **(e.g. animal56\_drug_105)** :x:  
 
-3) Underscores should not be used withing elements
+3) Underscores should not be used within elements
 
       - userString_ID_condition **(e.g. animal4\_101_baseline)** :heavy_check_mark:
       - user_String_ID_condition **(e.g. PFC\_animal4**_101_wt_baseline.mat) :x:  
