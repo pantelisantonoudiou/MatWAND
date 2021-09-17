@@ -2487,7 +2487,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % Spectrogram - subplot for each experiment
-        function spectrogram_subplot(obj,Flow,Fhigh,normlz,paired,sub_plot)
+        function spectrogram_subplot(obj, Flow, Fhigh, normlz, paired, sub_plot)
             % spectrogram_plot(obj,Flow,Fhigh)
             % spectrogram subplot within desired frequencies
             % from Flow to Fhigh (in Hz)
@@ -2601,7 +2601,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end    
         
         % Plot Aver PSD with SEM - subplot for each experiment in one figure
-        function plot_subPSD(obj,Flow,Fhigh,paired,sub_plot)
+        function plot_subPSD(obj, Flow, Fhigh, paired, sub_plot)
             % plot_PSD_single(obj,Flow,Fhigh)
             % plot power spectral density within desired frequencies
             % from Flow to Fhigh
@@ -2688,8 +2688,8 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % Plot Aver PSD with SEM - mean accross experiment
-        function plot_meanPSD(obj,Flow,Fhigh,paired)
-            % plot_meanPSD(obj,Flow,Fhigh)
+        function plot_meanPSD(obj, Flow, Fhigh, paired)
+            % plot_meanPSD(obj, Flow, Fhigh, paired)
             % plot power spectral density within desired frequencies
             % from Flow to Fhigh
             % paired = remove paris with NaNs
@@ -2735,6 +2735,9 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                         disp([exp_list{i,ii} ' is empty'])
                     end
                 end
+                
+                % drop empty rows
+                temp_mean = temp_mean(:, ~sum(temp_mean,1)==0);
                 
                 % get mean and sem
                 mean_wave = mean(temp_mean,2)';
