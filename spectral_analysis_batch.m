@@ -2522,72 +2522,72 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
             for i = 1:exps % loop through experiments
                 
                 if sub_plot == 1
-                % subplot
-                subplot(ceil(exps/3),3,i)
+                    % subplot
+                    subplot(ceil(exps/3),3,i)
                 elseif sub_plot == 0
                     figure()
                 end
-                    
+                
                 % pre-allocate conditions
                 conc_pmat = []; wave_base = 1;
                 for ii = 1:conds %concatenate conditions to one vector
-                     % if file exists
-                     if isempty(exp_list{i,ii})==0
-                         % load file
-                         load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
-                         
-                         if ii == 1
-                             % create concatanated wave
-                             conc_pmat = proc_matrix(Flow:Fhigh,:);
-                             wave_base = mean(proc_matrix(Flow:Fhigh,:));
-                         else
-                             %-% concatanate baseline & drug segments
-                             conc_pmat = horzcat(conc_pmat,proc_matrix(Flow:Fhigh,:));
-                         end
-                         
-                         if ii == conds && normlz == true % normalise
-                             conc_pmat = conc_pmat/mean(wave_base);
-                         end
-                         
-                     else
-                         conc_pmat = horzcat(conc_pmat,NaN(length(Flow:Fhigh),obj.condition_time(ii)));                         
-                     end
-                    
-                    end
-                    % Get time vector
-                    [units,~,t,x_condition_time] = getcond_realtime(obj,mean(conc_pmat,1));
-                    x_condition_time = [0 x_condition_time];
-                    
-                    % Plot spectrogram
-                    hold on
-                    h = surf(t,freqx,conc_pmat,'EdgeColor','None'); z = get(h,'ZData');
-                    
+                    % if file exists
                     if isempty(exp_list{i,ii})==0
-                        title(erase(strrep(exp_list{i,ii},'_',' '),'.mat'));
+                        % load file
+                        load(fullfile(obj.proc_psd_path , exp_list{i,ii}),'proc_matrix');
+                        
+                        if ii == 1
+                            % create concatanated wave
+                            conc_pmat = proc_matrix(Flow:Fhigh,:);
+                            wave_base = mean(proc_matrix(Flow:Fhigh,:),2);
+                        else
+                            %-% concatanate baseline & drug segments
+                            conc_pmat = horzcat(conc_pmat,proc_matrix(Flow:Fhigh,:));
+                        end
+                        
+                        if ii == conds && normlz == true % normalise
+                            conc_pmat = conc_pmat./wave_base;
+                        end
+                        
+                    else
+                        conc_pmat = horzcat(conc_pmat,NaN(length(Flow:Fhigh),obj.condition_time(ii)));
                     end
                     
-                    % Format
-                    axis1 = gca; obj.prettify_o(axis1); colormap jet;
-                    colorbar;  axis tight; shading interp;
-                    view(0,90) % make 2d  % view(20,50);
+                end
+                % Get time vector
+                [units,~,t,x_condition_time] = getcond_realtime(obj,mean(conc_pmat,1));
+                x_condition_time = [0 x_condition_time];
+                
+                % Plot spectrogram
+                hold on
+                h = surf(t,freqx,conc_pmat,'EdgeColor','None'); z = get(h,'ZData');
+                
+                if isempty(exp_list{i,ii})==0
+                    title(erase(strrep(exp_list{i,ii},'_',' '),'.mat'));
+                end
+                
+                % Format
+                axis1 = gca; obj.prettify_o(axis1); colormap jet;
+                colorbar;  axis tight; shading interp;
+                view(0,90) % make 2d  % view(20,50);
+                
+                % get index at which max occurs and plot max freq line
+                %                     [max_y,idx] = max(conc_pmat);
+                %                     plot3(t,smooth_v1(freqx(idx),10),max_y,'c')
+                
+                % add conditions on plot
+                for iii = 1: conds
+                    xarrow = [x_condition_time(iii+1) x_condition_time(iii+1)];
+                    yarrow = [min(freqx) max(freqx)];
                     
-                    % get index at which max occurs and plot max freq line
-                    [max_y,idx] = max(conc_pmat);
-                    plot3(t,smooth_v1(freqx(idx),10),max_y,'c')
-                                       
-                    % add conditions on plot
-                    for iii = 1: conds
-                        xarrow = [x_condition_time(iii+1) x_condition_time(iii+1)];
-                        yarrow = [min(freqx) max(freqx)];
-                        
-                        % add arrow
-                        plot3(xarrow,yarrow,[max(z(:)) max(z(:))],'color',[1 1 1],'linewidth',2)
-                        
-                        % add text
-                        text((x_condition_time(iii+1)+ x_condition_time(iii))/2,0.9 * max(freqx),max(z(:)),...
-                            strrep(obj.condition_id(iii),'_', ' '),'HorizontalAlignment','center',...
-                            'Color','white','FontSize',14,'FontWeight','bold')
-                    end                        
+                    % add arrow
+                    plot3(xarrow,yarrow,[max(z(:)) max(z(:))],'color',[1 1 1],'linewidth',2)
+                    
+                    % add text
+                    text((x_condition_time(iii+1)+ x_condition_time(iii))/2,0.9 * max(freqx),max(z(:)),...
+                        strrep(obj.condition_id(iii),'_', ' '),'HorizontalAlignment','center',...
+                        'Color','white','FontSize',14,'FontWeight','bold')
+                end
                 
                 if sub_plot == 0
                     xlabel(['Time '  '(' units ')'])
@@ -2598,7 +2598,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
                 obj.super_labels([],['Time '  '(' units ')'],'Freq. (Hz)')
             end
             
-        end    
+        end
         
         % Plot Aver PSD with SEM - subplot for each experiment in one figure
         function plot_subPSD(obj, Flow, Fhigh, paired, sub_plot)
