@@ -1246,8 +1246,15 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function obj = make_analysis_dir(obj)
             % obj.save_path,obj.raw_psd_path  = make_analysis_dir(obj.lfp_data_path)
             % get analysis and raw psd folder paths
-            k = strfind(obj.lfp_data_path,obj.path_type);
-            obj.save_path = fullfile(obj.lfp_data_path(1:k(end)-1),['analysis_' obj.channel_struct{obj.channel_No}]);
+            k = strfind(obj.lfp_data_path, obj.path_type);
+            
+            % check if path ends in slash
+            lfp_path = obj.lfp_data_path;
+            if k(end) == length(obj.lfp_data_path)
+                lfp_path = lfp_path(1:end-1);
+            end
+            
+            obj.save_path = fullfile(lfp_path,['analysis_' obj.channel_struct{obj.channel_No}]);
             obj.raw_psd_path = fullfile(obj.save_path,'raw_psd'); % ['raw_psd_' obj.channel_struct{obj.channel_No}]
             
             % create analysis folder
