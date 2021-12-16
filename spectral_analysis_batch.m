@@ -1246,7 +1246,7 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         function obj = make_analysis_dir(obj)
             % obj.save_path,obj.raw_psd_path  = make_analysis_dir(obj.lfp_data_path)
             % get analysis and raw psd folder paths
-            k = strfind(obj.lfp_data_path, obj.path_type);
+            k = strfind(obj.lfp_data_path,obj.path_type);
             obj.save_path = fullfile(obj.lfp_data_path(1:k(end)-1),['analysis_' obj.channel_struct{obj.channel_No}]);
             obj.raw_psd_path = fullfile(obj.save_path,'raw_psd'); % ['raw_psd_' obj.channel_struct{obj.channel_No}]
             
@@ -1257,8 +1257,14 @@ classdef spectral_analysis_batch < matlab.mixin.Copyable
         end
         
         % reload object
-        function copy_obj = reload_object(obj)
-            temp_path = uigetdir(obj.desktop_path);
+        function copy_obj = reload_object(obj, path)
+            
+            if exist('path') == 1 %#ok
+                temp_path = path;
+            else
+                temp_path = uigetdir(obj.desktop_path);
+            end
+            
             % check if user gave input
             if temp_path == 0
                 copy_obj = 0;
